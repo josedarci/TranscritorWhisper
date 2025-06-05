@@ -17,15 +17,18 @@ transcritor-whisper/
 └── README.md # Documentação do projeto
 ```
 Conteúdo sugerido de requirements.txt:
+```
 openai-whisper
 gradio
 requests
+```
 
----
 Também é necessário ter o FFmpeg instalado no sistema.
 2. Instale o backend Node.js
+```
 cd backend
 npm install
+```
 Crie o arquivo .env com as credenciais do banco:
 
 ## ✅ Pré-requisitos
