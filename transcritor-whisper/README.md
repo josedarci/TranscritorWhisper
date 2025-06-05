@@ -30,6 +30,12 @@ cd backend
 npm install
 ```
 Crie o arquivo .env com as credenciais do banco:
+```
+DB_HOST=***
+DB_USER=***
+DB_PASSWORD=***
+DB_NAME=***
+```
 
 ## ✅ Pré-requisitos
 
