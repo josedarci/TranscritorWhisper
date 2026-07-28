@@ -356,9 +356,37 @@ def gerar_exportacao(nome_arquivo, tipo_formato):
         return f"Erro ao gerar exportação: {e}", None
     return f"Transcrição para '{nome_limpo}' não foi localizada no banco de dados.", None
 
+def obter_caminho_audio_local(item):
+    """Localiza o arquivo de áudio no servidor para alimentar o player nativo do Gradio."""
+    if not item:
+        return None
+        
+    caminho = item.get("caminho") or item.get("url") or ""
+    nome = item.get("nome_arquivo") or ""
+
+    candidatos = [
+        caminho.lstrip("/"),
+        os.path.join("uploads", os.path.basename(caminho.lstrip("/"))),
+        os.path.join("uploads", nome),
+        os.path.join("transcritor-whisper/backend/uploads", os.path.basename(caminho.lstrip("/"))),
+        os.path.join("transcritor-whisper/backend/uploads", nome)
+    ]
+
+    for cand in candidatos:
+        if cand and os.path.exists(cand) and os.path.isfile(cand):
+            return os.path.abspath(cand)
+
+    # Fallback se houver audios na pasta uploads
+    if os.path.exists("uploads"):
+        files = [f for f in os.listdir("uploads") if f.endswith((".mp3", ".wav", ".m4a"))]
+        if files:
+            return os.path.abspath(os.path.join("uploads", files[0]))
+
+    return None
+
 def carregar_acervo_grid(filtro=""):
     """Carrega todos os registros do MySQL formatados como DataFrame para a Grid do Acervo."""
-    cols = ["ID", "Nome do Arquivo", "Data Upload", "Duração", "Palavras", "Status", "Transcrição Disponível?"]
+    cols = ["ID", "Nome do Arquivo", "Data Upload", "Duração", "Palavras", "Status", "Player / Mídia", "Transcrição Disponível?"]
     try:
         params = {"limit": 100}
         if filtro and str(filtro).strip():
@@ -379,6 +407,7 @@ def carregar_acervo_grid(filtro=""):
                     "Duração": duracao,
                     "Palavras": f"{palavras:,}",
                     "Status": item.get("status", "Concluído"),
+                    "Player / Mídia": "🔊 Tocador (Clique p/ Ouvir)",
                     "Transcrição Disponível?": tem_transcricao
                 })
             if grid_data:
@@ -388,9 +417,9 @@ def carregar_acervo_grid(filtro=""):
     return pd.DataFrame(columns=cols)
 
 def abrir_modal_detalhes(id_ou_nome):
-    """Exibe os detalhes formatados da transcrição selecionada."""
+    """Exibe os detalhes formatados da transcrição e retorna o caminho do áudio para o Player."""
     if not id_ou_nome:
-        return "Selecione ou digite o ID/nome do arquivo para visualizar."
+        return "Selecione ou digite o ID/nome do arquivo para visualizar.", None
     
     termo = str(id_ou_nome).strip().replace("\n", "").replace("\r", "")
     try:
@@ -406,8 +435,9 @@ def abrir_modal_detalhes(id_ou_nome):
             item = dados[0] if dados else None
 
         if not item:
-            return f"⚠️ Transcrição '{termo}' não encontrada no banco de dados."
+            return f"⚠️ Transcrição '{termo}' não encontrada no banco de dados.", None
 
+        caminho_audio = obter_caminho_audio_local(item)
         texto_formatado = formatar_texto_paragrafos(item.get("texto", ""))
         resumo_formatado = item.get("resumo", "Sem resumo gerado.")
 
@@ -445,9 +475,9 @@ def abrir_modal_detalhes(id_ou_nome):
 ### 📄 Transcrição Íntegra Formatada
 {texto_formatado}
 """
-        return md
+        return md, caminho_audio
     except Exception as e:
-        return f"⚠️ Erro ao carregar detalhes: {e}"
+        return f"⚠️ Erro ao carregar detalhes: {e}", None
 
 def excluir_registro_acervo(id_ou_nome):
     """Exclui um registro do MySQL."""
@@ -490,34 +520,36 @@ def obter_lista_nomes_arquivos():
 def ao_selecionar_dropdown_acervo(opcao):
     """Executado automaticamente ao selecionar um item no Dropdown de arquivos."""
     if not opcao:
-        return "", "*Selecione um arquivo no menu acima para visualizar.*"
+        return "", "*Selecione um arquivo no menu acima para visualizar.*", None
     import re
     match = re.search(r'\[(\d+)\]', str(opcao))
     if match:
         id_str = match.group(1)
-        return id_str, abrir_modal_detalhes(id_str)
-    return str(opcao), abrir_modal_detalhes(opcao)
+        md, audio_path = abrir_modal_detalhes(id_str)
+        return id_str, md, audio_path
+    md, audio_path = abrir_modal_detalhes(opcao)
+    return str(opcao), md, audio_path
 
 def ao_selecionar_linha_grid(evt: gr.SelectData):
     """Disparado automaticamente ao clicar em qualquer célula ou linha da Grid do Acervo."""
     if evt:
-        # 1. Se evt.index for um par (row, col)
         if evt.index is not None:
             try:
                 row_idx = evt.index[0] if isinstance(evt.index, (list, tuple)) else int(evt.index)
                 df = carregar_acervo_grid()
                 if not df.empty and row_idx < len(df):
                     id_row = str(df.iloc[row_idx]["ID"])
-                    return id_row, abrir_modal_detalhes(id_row)
+                    md, audio_path = abrir_modal_detalhes(id_row)
+                    return id_row, md, audio_path
             except Exception as ex:
                 logging.warning(f"Erro ao selecionar linha da grid por index: {ex}")
         
-        # 2. Fallback pelo valor direto da celula
         val = str(evt.value).strip() if evt.value else ""
         if val:
-            return val, abrir_modal_detalhes(val)
+            md, audio_path = abrir_modal_detalhes(val)
+            return val, md, audio_path
 
-    return "", "*Clique em uma linha da grid acima para visualizar a transcrição formatada.*"
+    return "", "*Clique em uma linha da grid acima para visualizar a transcrição formatada.*", None
 
 # Interface Gradio Profissional (Fases 1 a 4)
 with gr.Blocks(title="🎙️ Transcritor Inteligente v2.0 Enterprise", theme=gr.themes.Soft()) as demo:
@@ -559,16 +591,16 @@ with gr.Blocks(title="🎙️ Transcritor Inteligente v2.0 Enterprise", theme=gr
 
             grid_acervo = gr.Dataframe(
                 value=carregar_acervo_grid,
-                headers=["ID", "Nome do Arquivo", "Data Upload", "Duração", "Palavras", "Status", "Transcrição Disponível?"],
-                datatype=["number", "str", "str", "str", "str", "str", "str"],
-                col_count=(7, "fixed"),
+                headers=["ID", "Nome do Arquivo", "Data Upload", "Duração", "Palavras", "Status", "Player / Mídia", "Transcrição Disponível?"],
+                datatype=["number", "str", "str", "str", "str", "str", "str", "str"],
+                col_count=(8, "fixed"),
                 type="pandas",
-                label="📊 Lista de Áudios e Metadados do Banco de Dados (MySQL) - Clique em qualquer linha para abrir!",
+                label="📊 Lista de Áudios e Metadados do Banco de Dados (MySQL) - Clique em qualquer linha para tocar o áudio e abrir a transcrição!",
                 interactive=True
             )
 
             gr.Markdown("---")
-            gr.Markdown("### 👁️ Inspeção Detalhada da Transcrição Selecionada")
+            gr.Markdown("### 👁️ Inspeção Detalhada e Player de Mídia da Transcrição")
 
             with gr.Row():
                 dropdown_selecao = gr.Dropdown(
@@ -580,18 +612,21 @@ with gr.Blocks(title="🎙️ Transcritor Inteligente v2.0 Enterprise", theme=gr
                 input_id_selecionado = gr.Textbox(label="ID / Arquivo Selecionado", placeholder="Ex: 36 ou 250704_001.mp3", scale=1)
 
             with gr.Row():
-                btn_abrir_modal = gr.Button("👁️ Visualizar Transcrição Formatada", variant="primary", scale=2)
+                btn_abrir_modal = gr.Button("👁️ Visualizar Transcrição & Carregar Áudio", variant="primary", scale=2)
                 btn_excluir_acervo = gr.Button("🗑️ Excluir Registro", variant="stop", scale=1)
 
             out_status_acervo = gr.Textbox(label="Status da Ação", visible=False)
+
+            with gr.Accordion("🎧 Player de Áudio Integrado - Tocador da Reunião (Play / Pausa)", open=True):
+                player_audio_acervo = gr.Audio(label="🎧 Controles de Mídia: Tocar, Pausar, Avançar e Ajustar Velocidade", type="filepath", interactive=False)
             
             with gr.Accordion("📄 Visualizador de Transcrição Formatada & Metadados", open=True):
-                out_modal_conteudo = gr.Markdown(value="*Selecione um arquivo no Dropdown ou clique em qualquer linha da grid para carregar a transcrição formatada automaticamente.*")
+                out_modal_conteudo = gr.Markdown(value="*Selecione um arquivo no Dropdown ou clique em qualquer linha da grid para carregar o áudio e a transcrição automaticamente.*")
 
-            dropdown_selecao.change(fn=ao_selecionar_dropdown_acervo, inputs=[dropdown_selecao], outputs=[input_id_selecionado, out_modal_conteudo])
-            grid_acervo.select(fn=ao_selecionar_linha_grid, inputs=[], outputs=[input_id_selecionado, out_modal_conteudo])
+            dropdown_selecao.change(fn=ao_selecionar_dropdown_acervo, inputs=[dropdown_selecao], outputs=[input_id_selecionado, out_modal_conteudo, player_audio_acervo])
+            grid_acervo.select(fn=ao_selecionar_linha_grid, inputs=[], outputs=[input_id_selecionado, out_modal_conteudo, player_audio_acervo])
             btn_refresh_acervo.click(fn=carregar_acervo_grid, inputs=[input_filtro_acervo], outputs=[grid_acervo])
-            btn_abrir_modal.click(fn=abrir_modal_detalhes, inputs=[input_id_selecionado], outputs=[out_modal_conteudo])
+            btn_abrir_modal.click(fn=abrir_modal_detalhes, inputs=[input_id_selecionado], outputs=[out_modal_conteudo, player_audio_acervo])
             btn_excluir_acervo.click(fn=excluir_registro_acervo, inputs=[input_id_selecionado], outputs=[out_status_acervo, grid_acervo])
 
         # ABA 3: Pesquisa Semântica & Histórico
