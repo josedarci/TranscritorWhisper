@@ -474,6 +474,19 @@ def obter_lista_choices_acervo():
         pass
     return []
 
+def obter_lista_nomes_arquivos():
+    """Retorna uma lista simples com os nomes dos arquivos de áudio transcritos no acervo."""
+    try:
+        res = requests.get(f"{API_BASE}/transcricoes", params={"limit": 100}, timeout=5)
+        if res.status_code == 200:
+            dados = res.json().get("dados", [])
+            nomes = [item['nome_arquivo'] for item in dados if item.get('nome_arquivo')]
+            if nomes:
+                return sorted(list(set(nomes)))
+    except Exception:
+        pass
+    return []
+
 def ao_selecionar_dropdown_acervo(opcao):
     """Executado automaticamente ao selecionar um item no Dropdown de arquivos."""
     if not opcao:
@@ -601,7 +614,12 @@ with gr.Blocks(title="🎙️ Transcritor Inteligente v2.0 Enterprise", theme=gr
         # ABA 5: Chat Inteligente com Transcrição (RAG)
         with gr.TabItem("💬 Chat RAG com Áudio"):
             gr.Markdown("### 💬 Tire Dúvidas sobre uma Transcrição Específica")
-            input_nome_chat = gr.Textbox(label="Nome exato do arquivo (ex: '250704_001.mp3')", placeholder="Nome do arquivo...")
+            input_nome_chat = gr.Dropdown(
+                choices=obter_lista_nomes_arquivos(),
+                label="Selecione o arquivo de áudio para tirar dúvidas (Chat RAG)",
+                value=None,
+                allow_custom_value=True
+            )
             input_pergunta_chat = gr.Textbox(label="Sua pergunta sobre o conteúdo deste áudio")
             btn_chat = gr.Button("🤖 Perguntar à IA", variant="primary")
             out_resposta_chat = gr.Textbox(label="Resposta da IA (baseada apenas na transcrição)", lines=8)
@@ -611,7 +629,12 @@ with gr.Blocks(title="🎙️ Transcritor Inteligente v2.0 Enterprise", theme=gr
         # ABA 6: Exportação de Relatórios e Atas em PDF
         with gr.TabItem("📥 Exportar Relatório"):
             gr.Markdown("### 📥 Exportação de Documentos e Atas Operacionais em PDF")
-            input_nome_exp = gr.Textbox(label="Nome do Arquivo", placeholder="Ex: 250704_001.mp3")
+            input_nome_exp = gr.Dropdown(
+                choices=obter_lista_nomes_arquivos(),
+                label="Selecione o arquivo para exportar relatório / PDF",
+                value=None,
+                allow_custom_value=True
+            )
             radio_formato = gr.Radio(choices=["PDF (Ata Operacional)", "TXT", "Markdown", "HTML"], value="PDF (Ata Operacional)", label="Formato de Saída")
             btn_export = gr.Button("📝 Gerar e Baixar Documento Exportado", variant="primary")
             
