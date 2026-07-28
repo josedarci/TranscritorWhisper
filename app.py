@@ -287,6 +287,23 @@ def carregar_dashboard_stats():
         return f"⚠️ Não foi possível carregar métricas da API Node.js: {e}"
     return "Métricas indisponíveis."
 
+def destacar_termo_texto(texto, termo):
+    """Destaca todas as ocorrências insensíveis a maiúsculas/minúsculas do termo pesquisado no texto usando a tag HTML <mark>."""
+    if not texto or not termo or not str(termo).strip():
+        return texto
+    
+    termo_limpo = str(termo).strip()
+    if len(termo_limpo) < 2:
+        return texto
+
+    import re
+    pattern = re.compile(re.escape(termo_limpo), re.IGNORECASE)
+    def replacer(match):
+        w = match.group(0)
+        return f'<mark style="background-color: #fef08a; color: #854d0e; padding: 2px 6px; border-radius: 4px; font-weight: bold;">{w}</mark>'
+
+    return pattern.sub(replacer, texto)
+
 def realizar_pesquisa(termo_busca):
     """Busca avançada de transcrições e busca semântica (Etapa 5 e 10)."""
     if not termo_busca:
@@ -298,7 +315,8 @@ def realizar_pesquisa(termo_busca):
     if docs_semanticos:
         resultados_formatados.append("🧠 RESULTADOS DA BUSCA SEMÂNTICA (RAG):\n" + "-"*40)
         for doc in docs_semanticos:
-            resultados_formatados.append(f"📌 [{doc['nome_arquivo']}] Chunk {doc['chunk_index']}:\n\"{doc['texto']}\"")
+            snippet = destacar_termo_texto(doc['texto'], termo_busca)
+            resultados_formatados.append(f"📌 [{doc['nome_arquivo']}] Chunk {doc['chunk_index']}:\n\"{snippet}\"")
 
     # 2. Busca no MySQL via API Node.js
     try:
@@ -309,9 +327,10 @@ def realizar_pesquisa(termo_busca):
                 resultados_formatados.append("\n🗄️ RESULTADOS DO BANCO DE DADOS (MySQL):\n" + "-"*40)
                 for item in dados:
                     dt = formatar_data_br(item.get('data_upload'))
+                    resumo_destacado = destacar_termo_texto(item.get('resumo', 'Sem resumo')[:300], termo_busca)
                     resultados_formatados.append(
                         f"📄 {item['nome_arquivo']} | Data: {dt}\n"
-                        f"Resumo: {item.get('resumo', 'Sem resumo')[:200]}...\n"
+                        f"Resumo: {resumo_destacado}...\n"
                     )
     except Exception as e:
         logging.warning(f"Erro ao consultar API para pesquisa: {e}")
@@ -391,12 +410,12 @@ def melhorar_audio_ffmpeg(caminho_entrada):
 
     return caminho_entrada
 
-def acao_melhorar_audio_selecionado(id_ou_nome):
+def acao_melhorar_audio_selecionado(id_ou_nome, termo_destaque=""):
     """Aplica o tratamento de áudio via FFmpeg no registro selecionado e recarrega o player."""
     if not id_ou_nome:
         return "Selecione um arquivo da grid primeiro.", None
     
-    md, caminho_audio = abrir_modal_detalhes(id_ou_nome)
+    md, caminho_audio = abrir_modal_detalhes(id_ou_nome, termo_destaque)
     if caminho_audio and os.path.exists(caminho_audio):
         audio_tratado = melhorar_audio_ffmpeg(caminho_audio)
         msg_md = md + "\n\n> [!TIP]\n> ✨ **Áudio Tratado com Sucesso!** Aplicação de Filtro Passa-Banda Vocal (80Hz-8000Hz) e Normalização EBU R128."
@@ -457,8 +476,8 @@ def carregar_acervo_grid(filtro=""):
         logging.error(f"Erro ao carregar acervo: {e}")
     return pd.DataFrame(columns=cols)
 
-def abrir_modal_detalhes(id_ou_nome):
-    """Exibe os detalhes formatados da transcrição e retorna o caminho do áudio para o Player."""
+def abrir_modal_detalhes(id_ou_nome, termo_destaque=""):
+    """Exibe os detalhes formatados da transcrição com destaque de termos e retorna o caminho do áudio para o Player."""
     if not id_ou_nome:
         return "Selecione ou digite o ID/nome do arquivo para visualizar.", None
     
@@ -482,6 +501,14 @@ def abrir_modal_detalhes(id_ou_nome):
         texto_formatado = formatar_texto_paragrafos(item.get("texto", ""))
         resumo_formatado = item.get("resumo", "Sem resumo gerado.")
 
+        # Destaque de palavra-chave pesquisada se houver
+        banner_destaque = ""
+        if termo_destaque and str(termo_destaque).strip():
+            termo_clean = str(termo_destaque).strip()
+            texto_formatado = destacar_termo_texto(texto_formatado, termo_clean)
+            resumo_formatado = destacar_termo_texto(resumo_formatado, termo_clean)
+            banner_destaque = f"\n> 🔍 **Termo Pesquisado Destacado no Texto**: <mark style=\"background-color: #fef08a; color: #854d0e; padding: 2px 6px; border-radius: 4px; font-weight: bold;\">{termo_clean}</mark>\n"
+
         entidades_json = item.get("entidades", {})
         if isinstance(entidades_json, str):
             try: entidades_json = json.loads(entidades_json)
@@ -498,7 +525,7 @@ def abrir_modal_detalhes(id_ou_nome):
         data_formatada = formatar_data_br(item.get('data_upload'))
 
         md = f"""## 📄 Inspeção da Transcrição: `{item.get('nome_arquivo')}`
-
+{banner_destaque}
 ### 📋 Metadados do Arquivo
 - **ID no Banco**: `{item.get('id')}`
 - **Data de Registro**: `{data_formatada}`
@@ -558,7 +585,7 @@ def obter_lista_nomes_arquivos():
         pass
     return []
 
-def ao_selecionar_dropdown_acervo(opcao):
+def ao_selecionar_dropdown_acervo(opcao, termo_filtro=""):
     """Executado automaticamente ao selecionar um item no Dropdown de arquivos."""
     if not opcao:
         return "", "*Selecione um arquivo no menu acima para visualizar.*", None
@@ -566,28 +593,28 @@ def ao_selecionar_dropdown_acervo(opcao):
     match = re.search(r'\[(\d+)\]', str(opcao))
     if match:
         id_str = match.group(1)
-        md, audio_path = abrir_modal_detalhes(id_str)
+        md, audio_path = abrir_modal_detalhes(id_str, termo_filtro)
         return id_str, md, audio_path
-    md, audio_path = abrir_modal_detalhes(opcao)
+    md, audio_path = abrir_modal_detalhes(opcao, termo_filtro)
     return str(opcao), md, audio_path
 
-def ao_selecionar_linha_grid(evt: gr.SelectData):
+def ao_selecionar_linha_grid(evt: gr.SelectData, termo_filtro=""):
     """Disparado automaticamente ao clicar em qualquer célula ou linha da Grid do Acervo."""
     if evt:
         if evt.index is not None:
             try:
                 row_idx = evt.index[0] if isinstance(evt.index, (list, tuple)) else int(evt.index)
-                df = carregar_acervo_grid()
+                df = carregar_acervo_grid(termo_filtro)
                 if not df.empty and row_idx < len(df):
                     id_row = str(df.iloc[row_idx]["ID"])
-                    md, audio_path = abrir_modal_detalhes(id_row)
+                    md, audio_path = abrir_modal_detalhes(id_row, termo_filtro)
                     return id_row, md, audio_path
             except Exception as ex:
                 logging.warning(f"Erro ao selecionar linha da grid por index: {ex}")
         
         val = str(evt.value).strip() if evt.value else ""
         if val:
-            md, audio_path = abrir_modal_detalhes(val)
+            md, audio_path = abrir_modal_detalhes(val, termo_filtro)
             return val, md, audio_path
 
     return "", "*Clique em uma linha da grid acima para visualizar a transcrição formatada.*", None
@@ -665,11 +692,11 @@ with gr.Blocks(title="🎙️ Transcritor Inteligente v2.0 Enterprise", theme=gr
             with gr.Accordion("📄 Visualizador de Transcrição Formatada & Metadados", open=True):
                 out_modal_conteudo = gr.Markdown(value="*Selecione um arquivo no Dropdown ou clique em qualquer linha da grid para carregar o áudio e a transcrição automaticamente.*")
 
-            dropdown_selecao.change(fn=ao_selecionar_dropdown_acervo, inputs=[dropdown_selecao], outputs=[input_id_selecionado, out_modal_conteudo, player_audio_acervo])
-            grid_acervo.select(fn=ao_selecionar_linha_grid, inputs=[], outputs=[input_id_selecionado, out_modal_conteudo, player_audio_acervo])
+            dropdown_selecao.change(fn=ao_selecionar_dropdown_acervo, inputs=[dropdown_selecao, input_filtro_acervo], outputs=[input_id_selecionado, out_modal_conteudo, player_audio_acervo])
+            grid_acervo.select(fn=ao_selecionar_linha_grid, inputs=[input_filtro_acervo], outputs=[input_id_selecionado, out_modal_conteudo, player_audio_acervo])
             btn_refresh_acervo.click(fn=carregar_acervo_grid, inputs=[input_filtro_acervo], outputs=[grid_acervo])
-            btn_abrir_modal.click(fn=abrir_modal_detalhes, inputs=[input_id_selecionado], outputs=[out_modal_conteudo, player_audio_acervo])
-            btn_melhorar_audio.click(fn=acao_melhorar_audio_selecionado, inputs=[input_id_selecionado], outputs=[out_modal_conteudo, player_audio_acervo])
+            btn_abrir_modal.click(fn=abrir_modal_detalhes, inputs=[input_id_selecionado, input_filtro_acervo], outputs=[out_modal_conteudo, player_audio_acervo])
+            btn_melhorar_audio.click(fn=acao_melhorar_audio_selecionado, inputs=[input_id_selecionado, input_filtro_acervo], outputs=[out_modal_conteudo, player_audio_acervo])
             btn_excluir_acervo.click(fn=excluir_registro_acervo, inputs=[input_id_selecionado], outputs=[out_status_acervo, grid_acervo])
 
         # ABA 3: Pesquisa Semântica & Histórico
