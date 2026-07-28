@@ -191,6 +191,102 @@ Essa abordagem modular permite que qualquer componente seja atualizado ou escala
 
 ---
 
+## 🔥 RECURSO EM DESTAQUE: CHAT RAG (Retrieval-Augmented Generation)
+
+A aba **Chat RAG** é a funcionalidade mais avançada e poderosa do projeto. Ela transforma a plataforma de um simples transcritor de áudio em um **assistente inteligente que conversa com o conteúdo das reuniões**.
+
+### 💡 O que é RAG?
+RAG significa **Retrieval-Augmented Generation** ("Geração Aumentada por Recuperação").
+
+Em vez de pedir para a IA responder apenas com seu conhecimento geral da internet, o sistema primeiro **busca as informações relevantes nas transcrições armazenadas** e só então envia esse contexto exato para o Llama 3 gerar a resposta.
+
+```text
+Pergunta do usuário
+        │
+        ▼
+Busca nas transcrições (VectorStore)
+        │
+        ▼
+Seleciona os trechos mais relevantes
+        │
+        ▼
+Envia esses trechos ao Llama 3
+        │
+        ▼
+Resposta baseada na reunião
+```
+
+---
+
+### 🎯 Exemplo Prático
+
+Imagine que você tenha gravado uma reunião de 2 horas sobre migração para a nuvem Azure (`250704_001.mp3`).
+
+Você faz a seguinte pergunta no chat:
+> *"Quais decisões foram tomadas sobre a migração?"*
+
+O sistema executa o seguinte fluxo:
+1. Pesquisa a transcrição do áudio selecionado.
+2. Encontra os trechos exatos que tratam da migração.
+3. Envia apenas esses trechos para o Llama 3.
+4. O Llama 3 responde:
+   > *"Na reunião foi decidido migrar o serviço Extrato Pix para o Azure App Service, utilizar o Azure SQL Database e concluir a migração até setembro."*
+
+Essa resposta é 100% baseada no conteúdo real da reunião, sem palpites ou generalismos.
+
+---
+
+### 🛡️ Por que utilizar RAG? (Eliminação de Alucinações)
+Sem a arquitetura RAG, o modelo de linguagem pode responder com informações inventadas (*"alucinações"*).
+
+- **Sem RAG**: Pergunta *"Quem ficou responsável pelo projeto?"* → A IA pode inventar um nome qualquer.
+- **Com RAG**: A IA pesquisa o texto real e responde apenas com os nomes expressamente citados na gravação.
+
+---
+
+### ⚙️ Como funciona tecnicamente
+
+Imagine que a transcrição de um áudio longo tenha 100 páginas. Ela é dividida em blocos lógicos:
+
+```text
+Bloco 1: "Bom dia pessoal..."
+-----------------------------------------------
+Bloco 2: "Hoje falaremos sobre Azure..."
+-----------------------------------------------
+Bloco 3: "José será o responsável técnico..."
+-----------------------------------------------
+Bloco 4: "O custo previsto é de R$ 50.000..."
+```
+
+1. Cada bloco é convertido em um **Embedding** (um vetor numérico de alta dimensão que representa seu significado semântico).
+2. Esses vetores ficam salvos no banco vetorial (**ChromaDB / FAISS**).
+3. Quando o usuário pergunta: *"Quem ficou responsável?"*, o sistema faz uma busca por similaridade vetorial e localiza instantaneamente o **Bloco 3**.
+4. O Bloco 3 é enviado ao Llama 3, que entrega a resposta exata.
+
+```text
+Pergunta do Usuário ──► Embedding ──► Busca Vetorial ──► Bloco 3 ──► Llama 3 ──► Resposta Exata
+```
+
+---
+
+### ❓ Exemplos do que pode ser perguntado no Chat RAG:
+
+- 📊 **Resumos Executivos**: *"Faça um resumo executivo dos pontos principais."*
+- 📌 **Decisões**: *"Quais decisões foram tomadas?"*
+- ⏳ **Pendências & Prazos**: *"Quais tarefas ficaram pendentes e quais são as datas de entrega?"*
+- 👥 **Participantes**: *"Quem participou ou foi mencionado na conversa?"*
+- 💰 **Valores & Orçamento**: *"Quanto foi aprovado de investimento?"*
+- 🛠️ **Tecnologias**: *"Foi citado Kubernetes ou AWS durante a reunião?"*
+
+---
+
+### 🚀 Recursos de Experiência na Aba RAG:
+- **Respostas com Evidências**: Exibição dos trechos exatos da transcrição utilizados como base.
+- **Transcrições de Grandes Volumes**: Localização instantânea de termos em centenas de reuniões gravadas.
+- **Zero Alucinação**: Respostas fiéis e auditáveis aos arquivos de áudio originais.
+
+---
+
 ## 💡 TUTORIAL COMPLETO DE USO E GUIA DE CADA FUNCIONALIDADE
 
 Este guia explica detalhadamente como utilizar cada uma das 5 abas da plataforma, com instruções passo a passo e a explicação do que ocorre nos bastidores.
