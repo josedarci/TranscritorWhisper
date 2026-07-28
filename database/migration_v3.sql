@@ -77,17 +77,63 @@ CREATE TABLE IF NOT EXISTS api_keys (
     FOREIGN KEY (empresa_id) REFERENCES empresas(id) ON DELETE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
--- 8. Atualização da tabela transcricoes com relacionamento de Multi-Tenancy
-ALTER TABLE transcricoes
-    ADD COLUMN IF NOT EXISTS empresa_id INT DEFAULT 1 AFTER id,
-    ADD COLUMN IF NOT EXISTS usuario_id INT DEFAULT 1 AFTER empresa_id;
+-- 8. Tabelas de Estruturação de Reuniões (Agente 3 - Banco de Dados)
+CREATE TABLE IF NOT EXISTS uploads (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    empresa_id INT DEFAULT 1,
+    usuario_id INT DEFAULT 1,
+    nome_original VARCHAR(255) NOT NULL,
+    caminho VARCHAR(512) NOT NULL,
+    tipo VARCHAR(50) DEFAULT 'audio/mp3',
+    tamanho_bytes BIGINT DEFAULT 0,
+    criado_em DATETIME DEFAULT CURRENT_TIMESTAMP
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
--- 9. Índices de Otimização
-CREATE INDEX IF NOT EXISTS idx_transcricoes_empresa ON transcricoes(empresa_id);
-CREATE INDEX IF NOT EXISTS idx_transcricoes_usuario ON transcricoes(usuario_id);
-CREATE INDEX IF NOT EXISTS idx_usuarios_email ON usuarios(email);
+CREATE TABLE IF NOT EXISTS embeddings (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    transcricao_id INT NOT NULL,
+    chunk_index INT NOT NULL,
+    vetor JSON NOT NULL,
+    criado_em DATETIME DEFAULT CURRENT_TIMESTAMP
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
--- 10. Dados Iniciais (Empresa Padrão e Administrador)
+CREATE TABLE IF NOT EXISTS chat_history (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    usuario_id INT NOT NULL,
+    transcricao_id INT DEFAULT NULL,
+    pergunta TEXT NOT NULL,
+    resposta TEXT NOT NULL,
+    criado_em DATETIME DEFAULT CURRENT_TIMESTAMP
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+CREATE TABLE IF NOT EXISTS meeting_summary (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    transcricao_id INT NOT NULL,
+    resumo_executivo LONGTEXT,
+    resumo_tecnico LONGTEXT,
+    sentimento VARCHAR(50) DEFAULT 'Neutro',
+    criado_em DATETIME DEFAULT CURRENT_TIMESTAMP
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+CREATE TABLE IF NOT EXISTS meeting_decisions (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    transcricao_id INT NOT NULL,
+    decisao TEXT NOT NULL,
+    impacto VARCHAR(100),
+    criado_em DATETIME DEFAULT CURRENT_TIMESTAMP
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+CREATE TABLE IF NOT EXISTS meeting_tasks (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    transcricao_id INT NOT NULL,
+    tarefa TEXT NOT NULL,
+    responsavel VARCHAR(100),
+    prazo VARCHAR(50),
+    status VARCHAR(50) DEFAULT 'Pendente',
+    criado_em DATETIME DEFAULT CURRENT_TIMESTAMP
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+-- 9. Dados Iniciais (Empresa Padrão e Administrador)
 INSERT IGNORE INTO empresas (id, razao_social, nome_fantasia, status) 
 VALUES (1, 'Empresa XYZ Sistemas', 'Empresa XYZ', 'Ativo');
 

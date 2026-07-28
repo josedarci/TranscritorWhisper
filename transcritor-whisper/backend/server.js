@@ -213,6 +213,30 @@ app.post('/api/mobile/notificacoes', autenticarToken, (req, res) => {
 });
 
 // ----------------------------------------------------
+// SWAGGER / OPENAPI DOCUMENTATION ENDPOINT (AGENTE 12)
+// ----------------------------------------------------
+app.get('/api/docs', (req, res) => {
+    res.json({
+        openapi: '3.0.0',
+        info: {
+            title: 'Transcritor Inteligente Enterprise API',
+            version: '3.0.0',
+            description: 'Documentação da API REST de Transcrição, Inteligência Artificial, RAG e Multitenancy'
+        },
+        paths: {
+            '/api/auth/register': { post: { summary: 'Cadastro de Usuários e Empresas' } },
+            '/api/auth/login': { post: { summary: 'Autenticação JWT' } },
+            '/api/auth/me': { get: { summary: 'Perfil do Usuário Logado' } },
+            '/api/transcricoes': { get: { summary: 'Lista de Transcrições com Paginação e Busca' } },
+            '/api/transcricoes/{id}': { get: { summary: 'Detalhes da Transcrição por ID' } },
+            '/api/mobile/upload': { post: { summary: 'Upload direto via aplicativo móvel' } },
+            '/api/mobile/transcricoes': { get: { summary: 'Feed otimizado para Android/iOS' } },
+            '/api/stats': { get: { summary: 'Indicadores Globais do Dashboard' } }
+        }
+    });
+});
+
+// ----------------------------------------------------
 // ENDPOINTS DE TRANSCRIÇÕES & METADADOS
 // ----------------------------------------------------
 
