@@ -340,6 +340,111 @@ def gerar_exportacao(nome_arquivo, tipo_formato):
         return f"Erro ao gerar exportação: {e}", None
     return f"Transcrição para '{nome_limpo}' não foi localizada no banco de dados.", None
 
+def carregar_acervo_grid(filtro=""):
+    """Carrega todos os registros do MySQL formatados para a Grid do Acervo."""
+    try:
+        params = {"limit": 100}
+        if filtro and str(filtro).strip():
+            params["q"] = str(filtro).strip()
+        res = requests.get(f"{API_BASE}/transcricoes", params=params, timeout=5)
+        if res.status_code == 200:
+            dados = res.json().get("dados", [])
+            grid_data = []
+            for item in dados:
+                duracao = f"{round(item.get('duracao_segundos', 0)/60, 1)} min" if item.get('duracao_segundos') else "N/A"
+                palavras = item.get("quantidade_palavras", 0)
+                tem_transcricao = "✅ Sim" if item.get("texto") and len(item["texto"]) > 10 else "❌ Não"
+                data_up = str(item.get("data_upload", "N/A"))[:19].replace("T", " ")
+                grid_data.append([
+                    item.get("id"),
+                    item.get("nome_arquivo"),
+                    data_up,
+                    duracao,
+                    f"{palavras:,}",
+                    item.get("status", "Concluído"),
+                    tem_transcricao
+                ])
+            return grid_data
+    except Exception as e:
+        logging.error(f"Erro ao carregar acervo: {e}")
+    return []
+
+def abrir_modal_detalhes(id_ou_nome):
+    """Exibe os detalhes formatados da transcrição selecionada."""
+    if not id_ou_nome:
+        return "Selecione ou digite o ID/nome do arquivo para visualizar."
+    
+    termo = str(id_ou_nome).strip().replace("\n", "").replace("\r", "")
+    try:
+        item = None
+        if termo.isdigit():
+            res = requests.get(f"{API_BASE}/transcricoes/{termo}", timeout=5)
+            if res.status_code == 200:
+                item = res.json()
+        
+        if not item:
+            res = requests.get(f"{API_BASE}/transcricoes", params={"q": termo, "limit": 1}, timeout=5)
+            dados = res.json().get("dados", []) if res.status_code == 200 else []
+            item = dados[0] if dados else None
+
+        if not item:
+            return f"⚠️ Transcrição '{termo}' não encontrada no banco de dados."
+
+        texto_formatado = formatar_texto_paragrafos(item.get("texto", ""))
+        resumo_formatado = item.get("resumo", "Sem resumo gerado.")
+
+        entidades_json = item.get("entidades", {})
+        if isinstance(entidades_json, str):
+            try: entidades_json = json.loads(entidades_json)
+            except: entidades_json = {}
+        
+        entidades_md = ""
+        if entidades_json and isinstance(entidades_json, dict):
+            entidades_md += "\n#### 🏷️ Entidades Identificadas (NER):\n"
+            if entidades_json.get("pessoas"): entidades_md += f"- 👤 **Pessoas**: {', '.join(entidades_json['pessoas'])}\n"
+            if entidades_json.get("empresas"): entidades_md += f"- 🏢 **Empresas**: {', '.join(entidades_json['empresas'])}\n"
+            if entidades_json.get("datas"): entidades_md += f"- 📅 **Datas/Prazos**: {', '.join(entidades_json['datas'])}\n"
+            if entidades_json.get("valores"): entidades_md += f"- 💰 **Valores**: {', '.join(entidades_json['valores'])}\n"
+
+        data_formatada = str(item.get('data_upload', 'N/A'))[:19].replace("T", " ")
+
+        md = f"""## 📄 Inspeção da Transcrição: `{item.get('nome_arquivo')}`
+
+### 📋 Metadados do Arquivo
+- **ID no Banco**: `{item.get('id')}`
+- **Data de Registro**: `{data_formatada}`
+- **Duração Total**: `{round(item.get('duracao_segundos', 0)/60, 1)} minutos` (`{item.get('duracao_segundos', 0)}s`)
+- **Volume de Palavras**: `{item.get('quantidade_palavras', 0):,}` palavras (`{item.get('quantidade_caracteres', 0):,}` caracteres)
+- **Hash de Integridade (SHA-256)**: `{item.get('hash_sha256', 'N/A')}`
+{entidades_md}
+---
+
+### 🤖 Síntese Executiva (Ollama - Llama 3)
+{resumo_formatado}
+
+---
+
+### 📄 Transcrição Íntegra Formatada
+{texto_formatado}
+"""
+        return md
+    except Exception as e:
+        return f"⚠️ Erro ao carregar detalhes: {e}"
+
+def excluir_registro_acervo(id_ou_nome):
+    """Exclui um registro do MySQL."""
+    if not id_ou_nome:
+        return "Informe o ID para exclusão.", carregar_acervo_grid()
+    termo = str(id_ou_nome).strip()
+    try:
+        res = requests.delete(f"{API_BASE}/transcricoes/{termo}", timeout=5)
+        if res.status_code == 200:
+            msg = f"✅ Registro ID #{termo} excluído com sucesso!"
+            return msg, carregar_acervo_grid()
+    except Exception as e:
+        return f"Erro ao excluir: {e}", carregar_acervo_grid()
+    return f"Não foi possível excluir o registro #{termo}.", carregar_acervo_grid()
+
 # Interface Gradio Profissional (Fases 1 a 4)
 with gr.Blocks(title="🎙️ Transcritor Inteligente v2.0 Enterprise", theme=gr.themes.Soft()) as demo:
     gr.Markdown("# 🎙️ Transcritor Inteligente v2.0 Enterprise")
@@ -370,7 +475,40 @@ with gr.Blocks(title="🎙️ Transcritor Inteligente v2.0 Enterprise", theme=gr
                 outputs=[out_transcricoes, out_resumos, out_relatorio]
             )
 
-        # ABA 2: Pesquisa Semântica & Histórico
+        # ABA 2: Acervo & Gestão de Áudios
+        with gr.TabItem("📁 Acervo & Gestão"):
+            gr.Markdown("### 📁 Acervo Geral de Transcrições & Gestão do Banco de Dados")
+            
+            with gr.Row():
+                input_filtro_acervo = gr.Textbox(label="Filtrar por nome ou palavra-chave", placeholder="Ex: Bradesco, 250704...")
+                btn_refresh_acervo = gr.Button("🔄 Atualizar / Filtrar Acervo", variant="secondary")
+
+            grid_acervo = gr.Dataframe(
+                headers=["ID", "Nome do Arquivo", "Data Upload", "Duração", "Palavras", "Status", "Transcrição Disponível?"],
+                datatype=["number", "str", "str", "str", "str", "str", "str"],
+                col_count=(7, "fixed"),
+                label="📊 Lista de Áudios e Metadados do Banco de Dados (MySQL)",
+                interactive=False
+            )
+
+            gr.Markdown("---")
+            gr.Markdown("### 👁️ Inspeção Detalhada da Transcrição Selecionada")
+
+            with gr.Row():
+                input_id_selecionado = gr.Textbox(label="Digite o ID ou Nome do Arquivo da Grid", placeholder="Ex: 1 ou 250704_001.mp3", scale=2)
+                btn_abrir_modal = gr.Button("👁️ Visualizar Transcrição Formatada", variant="primary", scale=1)
+                btn_excluir_acervo = gr.Button("🗑️ Excluir Registro", variant="stop", scale=1)
+
+            out_status_acervo = gr.Textbox(label="Status da Ação", visible=False)
+            
+            with gr.Accordion("📄 Visualizador de Transcrição Formatada & Metadados", open=True):
+                out_modal_conteudo = gr.Markdown(value="*Selecione ou digite um arquivo da grid acima e clique em 'Visualizar Transcrição Formatada'.*")
+
+            btn_refresh_acervo.click(fn=carregar_acervo_grid, inputs=[input_filtro_acervo], outputs=[grid_acervo])
+            btn_abrir_modal.click(fn=abrir_modal_detalhes, inputs=[input_id_selecionado], outputs=[out_modal_conteudo])
+            btn_excluir_acervo.click(fn=excluir_registro_acervo, inputs=[input_id_selecionado], outputs=[out_status_acervo, grid_acervo])
+
+        # ABA 3: Pesquisa Semântica & Histórico
         with gr.TabItem("🔍 Pesquisa & Histórico"):
             gr.Markdown("### 🔍 Pesquisa Semântica & Consulta de Registros")
             input_busca = gr.Textbox(label="Digite o termo ou conceito a pesquisar (ex: 'data lake', 'orçamento', 'Azure')", placeholder="Ex: reuniões sobre custos...")
@@ -379,7 +517,7 @@ with gr.Blocks(title="🎙️ Transcritor Inteligente v2.0 Enterprise", theme=gr
 
             btn_busca.click(fn=realizar_pesquisa, inputs=[input_busca], outputs=[out_busca])
 
-        # ABA 3: Dashboard de Métricas
+        # ABA 4: Dashboard de Métricas
         with gr.TabItem("📊 Dashboard & Estatísticas"):
             gr.Markdown("### 📊 Indicadores Globais de Uso da Plataforma")
             btn_refresh_dash = gr.Button("🔄 Atualizar Métricas")
@@ -387,7 +525,7 @@ with gr.Blocks(title="🎙️ Transcritor Inteligente v2.0 Enterprise", theme=gr
 
             btn_refresh_dash.click(fn=carregar_dashboard_stats, inputs=[], outputs=[out_dash])
 
-        # ABA 4: Chat Inteligente com Transcrição (RAG)
+        # ABA 5: Chat Inteligente com Transcrição (RAG)
         with gr.TabItem("💬 Chat RAG com Áudio"):
             gr.Markdown("### 💬 Tire Dúvidas sobre uma Transcrição Específica")
             input_nome_chat = gr.Textbox(label="Nome exato do arquivo (ex: '250704_001.mp3')", placeholder="Nome do arquivo...")
@@ -397,7 +535,7 @@ with gr.Blocks(title="🎙️ Transcritor Inteligente v2.0 Enterprise", theme=gr
 
             btn_chat.click(fn=responder_chat_rag, inputs=[input_nome_chat, input_pergunta_chat], outputs=[out_resposta_chat])
 
-        # ABA 5: Exportação de Relatórios e Atas em PDF
+        # ABA 6: Exportação de Relatórios e Atas em PDF
         with gr.TabItem("📥 Exportar Relatório"):
             gr.Markdown("### 📥 Exportação de Documentos e Atas Operacionais em PDF")
             input_nome_exp = gr.Textbox(label="Nome do Arquivo", placeholder="Ex: 250704_001.mp3")

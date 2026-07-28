@@ -310,7 +310,17 @@ Este guia explica detalhadamente como utilizar cada uma das 5 abas da plataforma
 
 ---
 
-### 🔍 2. Aba: Pesquisa & Histórico
+### 📁 2. Aba: Acervo & Gestão de Áudios
+- **Objetivo**: Visualizar a Grid com todos os arquivos de áudio gravados no banco de dados, seus metadados completos, status da transcrição, inspeção detalhada em modal/accordion e exclusão de registros.
+- **Como Usar**:
+  1. Clique em **"🔄 Atualizar / Filtrar Acervo"** para recarregar a Grid com todos os arquivos salvos no MySQL.
+  2. Digite um termo no campo de filtro para refinar a busca na tabela.
+  3. Digite o ID do registro ou nome do arquivo e clique em **"👁️ Visualizar Transcrição Formatada"** para abrir a modal de inspeção completa com metadados, entidades NER, resumo executivo e transcrição em parágrafos.
+  4. Clique em **"🗑️ Excluir Registro"** para remover o arquivo do banco de dados quando necessário.
+
+---
+
+### 🔍 3. Aba: Pesquisa & Histórico
 - **Objetivo**: Consultar e filtrar transcrições anteriores por palavra-chave ou similaridade semântica por IA.
 - **Como Usar**:
   1. Digite o termo ou conceito desejado no campo de busca (ex: *"contrato"*, *"orçamento"*, *"Azure"*).
