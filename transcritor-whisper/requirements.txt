@@ -1,2 +1,5 @@
-whisper
+openai-whisper
 gradio
+requests
+fpdf2
+reportlab

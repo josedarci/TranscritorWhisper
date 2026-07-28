@@ -649,8 +649,8 @@ python3 -m unittest discover -s tests
 - [x] 🔍 **Busca semântica e Chat RAG** para consulta de transcrições por inteligência artificial
 - [x] 🏷️ **Extração automática de entidades (NER)** (Pessoas, Empresas, Datas, Valores e Emails em JSON)
 - [x] 📊 **Dashboard com métricas executivas** e **exportação em múltiplos formatos** (TXT, Markdown, HTML)
+- [x] 📝 **Geração automática de atas operacionais de reunião em PDF** (Documentos formais estilizados para impressão, visto e assinatura)
 - [x] 🐳 **Deploy simplificado via Docker & Docker Compose** (MySQL + Node.js + Python App)
-- [ ] 📝 Geração automática de atas operacionais de reunião em PDF
 - [ ] 🔐 Autenticação corporativa e controle de acesso baseado em funções (RBAC / OAuth2)
 - [ ] 📱 Aplicativo móvel integrado para gravação e envio direto à API privada
 

@@ -16,7 +16,7 @@ whisper_lock = threading.Lock()
 
 from services.ai_extractor import gerar_tags_e_categorias, extrair_entidades
 from services.vector_store import vector_store_global
-from services.exporter import exportar_txt, exportar_markdown, exportar_html
+from services.exporter import exportar_txt, exportar_markdown, exportar_html, exportar_pdf_ata_operacional
 
 # Configurações de logging
 logging.basicConfig(
@@ -309,9 +309,13 @@ def responder_chat_rag(nome_arquivo, pergunta_chat):
     return vector_store_global.chat_com_transcricao(nome_arquivo, pergunta_chat)
 
 def gerar_exportacao(nome_arquivo, tipo_formato):
-    """Exporta o relatório nos formatos TXT, Markdown ou HTML (Etapa 6)."""
+    """Exporta o relatório nos formatos TXT, Markdown, HTML ou PDF Ata Operacional (Etapa 6 + Ata PDF)."""
+    nome_limpo = str(nome_arquivo).strip().replace("\n", "").replace("\r", "")
+    if not nome_limpo:
+        return "Informe o nome do arquivo para exportação.", None
+
     try:
-        res = requests.get(f"{API_BASE}/transcricoes", params={"q": nome_arquivo, "limit": 1}, timeout=5)
+        res = requests.get(f"{API_BASE}/transcricoes", params={"q": nome_limpo, "limit": 1}, timeout=5)
         if res.status_code == 200:
             dados = res.json().get("dados", [])
             if dados:
@@ -319,14 +323,22 @@ def gerar_exportacao(nome_arquivo, tipo_formato):
                 texto = item.get("texto", "")
                 resumo = item.get("resumo", "")
                 if tipo_formato == "TXT":
-                    return exportar_txt(nome_arquivo, texto, resumo, item)
+                    return exportar_txt(nome_limpo, texto, resumo, item), None
                 elif tipo_formato == "Markdown":
-                    return exportar_markdown(nome_arquivo, texto, resumo, item)
+                    return exportar_markdown(nome_limpo, texto, resumo, item), None
                 elif tipo_formato == "HTML":
-                    return exportar_html(nome_arquivo, texto, resumo, item)
+                    return exportar_html(nome_limpo, texto, resumo, item), None
+                elif tipo_formato == "PDF (Ata Operacional)":
+                    caminho_pdf = exportar_pdf_ata_operacional(nome_limpo, texto, resumo, item)
+                    msg = (
+                        f"📝 ATA FORMAL DE REUNIÃO OPERACIONAL GERADA COM SUCESSO!\n\n"
+                        f"• Documento PDF criado em: {caminho_pdf}\n"
+                        f"• O arquivo está pronto para impressão, visto e assinatura formal no campo abaixo."
+                    )
+                    return msg, caminho_pdf
     except Exception as e:
-        return f"Erro ao gerar exportação: {e}"
-    return "Transcrição não localizada para exportação."
+        return f"Erro ao gerar exportação: {e}", None
+    return f"Transcrição para '{nome_limpo}' não foi localizada no banco de dados.", None
 
 # Interface Gradio Profissional (Fases 1 a 4)
 with gr.Blocks(title="🎙️ Transcritor Inteligente v2.0 Enterprise", theme=gr.themes.Soft()) as demo:
@@ -385,14 +397,17 @@ with gr.Blocks(title="🎙️ Transcritor Inteligente v2.0 Enterprise", theme=gr
 
             btn_chat.click(fn=responder_chat_rag, inputs=[input_nome_chat, input_pergunta_chat], outputs=[out_resposta_chat])
 
-        # ABA 5: Exportação de Relatórios
+        # ABA 5: Exportação de Relatórios e Atas em PDF
         with gr.TabItem("📥 Exportar Relatório"):
-            gr.Markdown("### 📥 Exportação de Documentos de Transcrição")
+            gr.Markdown("### 📥 Exportação de Documentos e Atas Operacionais em PDF")
             input_nome_exp = gr.Textbox(label="Nome do Arquivo", placeholder="Ex: 250704_001.mp3")
-            radio_formato = gr.Radio(choices=["TXT", "Markdown", "HTML"], value="Markdown", label="Formato de Saída")
-            btn_export = gr.Button("📄 Gerar Documento Exportado")
-            out_export = gr.Textbox(label="Conteúdo Formatado do Documento", lines=15)
+            radio_formato = gr.Radio(choices=["PDF (Ata Operacional)", "TXT", "Markdown", "HTML"], value="PDF (Ata Operacional)", label="Formato de Saída")
+            btn_export = gr.Button("📝 Gerar e Baixar Documento Exportado", variant="primary")
+            
+            with gr.Row():
+                out_export = gr.Textbox(label="Status e Detalhes do Documento", lines=8)
+                out_file_pdf = gr.File(label="📥 Download Direto do PDF (Ata Operacional)")
 
-            btn_export.click(fn=gerar_exportacao, inputs=[input_nome_exp, radio_formato], outputs=[out_export])
+            btn_export.click(fn=gerar_exportacao, inputs=[input_nome_exp, radio_formato], outputs=[out_export, out_file_pdf])
 
 demo.launch()
