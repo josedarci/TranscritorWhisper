@@ -663,6 +663,7 @@ python3 -m unittest discover -s tests
 - [x] ⚡ **Processamento paralelo e em fila de múltiplos áudios** (`ThreadPoolExecutor` com 1 a 8 workers)
 - [x] 🎧 **Player de Mídia Integrado** (Play, Pausa, Scrubbing, Controle de Velocidade e Sincronização 1:1 com o Áudio)
 - [x] ✨ **Motor de Tratamento e Aprimoramento de Áudio via FFmpeg** (Filtro passa-banda vocal 80Hz-8000Hz e Normalização EBU R128)
+- [x] 🖍️ **Destaque e Marcação Automática de Termos Pesquisados** (Destaque visual em amarelo `<mark>` no texto da transcrição e nos resumos)
 - [x] 📅 **Padronização Internacional de Datas em Português** (`DD/MM/YYYY HH:MM` em Grids, Modais e PDFs)
 - [x] ⚡ **Seleção Dinâmica via Menus Dropdown / Combobox** para Chat RAG, Inspeção e Exportação
 - [x] 🔍 **Busca semântica e Chat RAG** para consulta de transcrições por inteligência artificial
