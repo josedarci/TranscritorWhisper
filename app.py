@@ -404,7 +404,7 @@ def acao_melhorar_audio_selecionado(id_ou_nome):
     return md, caminho_audio
 
 def obter_caminho_audio_local(item):
-    """Localiza o arquivo de áudio no servidor para alimentar o player nativo do Gradio."""
+    """Localiza o arquivo de áudio físico no servidor correspondente à transcrição."""
     if not item:
         return None
         
@@ -422,12 +422,6 @@ def obter_caminho_audio_local(item):
     for cand in candidatos:
         if cand and os.path.exists(cand) and os.path.isfile(cand):
             return os.path.abspath(cand)
-
-    # Fallback se houver audios na pasta uploads
-    if os.path.exists("uploads"):
-        files = [f for f in os.listdir("uploads") if f.endswith((".mp3", ".wav", ".m4a"))]
-        if files:
-            return os.path.abspath(os.path.join("uploads", files[0]))
 
     return None
 
