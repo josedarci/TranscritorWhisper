@@ -643,9 +643,23 @@ python3 -m unittest discover -s tests
 
 ---
 
+## 🗺️ Roadmap do Projeto (Open Source)
+
+- [x] ⚡ **Processamento paralelo e em fila de múltiplos áudios** (`ThreadPoolExecutor` com 1 a 8 workers)
+- [x] 🔍 **Busca semântica e Chat RAG** para consulta de transcrições por inteligência artificial
+- [x] 🏷️ **Extração automática de entidades (NER)** (Pessoas, Empresas, Datas, Valores e Emails em JSON)
+- [x] 📊 **Dashboard com métricas executivas** e **exportação em múltiplos formatos** (TXT, Markdown, HTML)
+- [x] 🐳 **Deploy simplificado via Docker & Docker Compose** (MySQL + Node.js + Python App)
+- [ ] 📝 Geração automática de atas operacionais de reunião em PDF
+- [ ] 🔐 Autenticação corporativa e controle de acesso baseado em funções (RBAC / OAuth2)
+- [ ] 📱 Aplicativo móvel integrado para gravação e envio direto à API privada
+
+---
+
 ## 📜 Licença & Open Source
 
 Este projeto é **Open Source** e está licenciado sob a **[MIT License](LICENSE)**.
 
 Você é livre para usar, copiar, modificar, mesclar, publicar, distribuir, sublicenciar e/ou vender cópias deste software de forma totalmente gratuita e ilimitada.
+
 
