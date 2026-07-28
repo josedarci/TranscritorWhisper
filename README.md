@@ -664,6 +664,8 @@ python3 -m unittest discover -s tests
 - [x] 🎧 **Player de Mídia Integrado** (Play, Pausa, Scrubbing, Controle de Velocidade e Sincronização 1:1 com o Áudio)
 - [x] ✨ **Motor de Tratamento e Aprimoramento de Áudio via FFmpeg** (Filtro passa-banda vocal 80Hz-8000Hz e Normalização EBU R128)
 - [x] 🖍️ **Destaque e Marcação Automática de Termos Pesquisados** (Destaque visual em amarelo `<mark>` no texto da transcrição e nos resumos)
+- [x] 🔐 **Autenticação corporativa JWT & RBAC Multi-Tenant (FASE 1)** (Tabelas de usuários, empresas, permissões, audit log e API Keys)
+- [x] 🗣️ **Speaker Diarization & Pipeline Modular de IA (FASE 2)** (Diferenciação de oradores, prompts externos em markdown e análise de sentimento/riscos)
 - [x] 📅 **Padronização Internacional de Datas em Português** (`DD/MM/YYYY HH:MM` em Grids, Modais e PDFs)
 - [x] ⚡ **Seleção Dinâmica via Menus Dropdown / Combobox** para Chat RAG, Inspeção e Exportação
 - [x] 🔍 **Busca semântica e Chat RAG** para consulta de transcrições por inteligência artificial
@@ -671,7 +673,6 @@ python3 -m unittest discover -s tests
 - [x] 📊 **Dashboard com métricas executivas** e **exportação em múltiplos formatos** (TXT, Markdown, HTML)
 - [x] 📝 **Geração automática de atas operacionais de reunião em PDF** (Documentos formais estilizados para impressão, visto e assinatura)
 - [x] 🐳 **Deploy simplificado via Docker & Docker Compose** (MySQL + Node.js + Python App)
-- [ ] 🔐 Autenticação corporativa e controle de acesso baseado em funções (RBAC / OAuth2)
 - [ ] 📱 Aplicativo móvel integrado para gravação e envio direto à API privada
 
 ---

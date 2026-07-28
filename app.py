@@ -18,6 +18,8 @@ whisper_lock = threading.Lock()
 from services.ai_extractor import gerar_tags_e_categorias, extrair_entidades
 from services.vector_store import vector_store_global
 from services.exporter import exportar_txt, exportar_markdown, exportar_html, exportar_pdf_ata_operacional, formatar_data_br
+from pipeline.audio_processor import calcular_hash_sha256, aplicar_diarization_simulada
+from pipeline.llm_enricher import enriquecer_transcricao_completa
 
 # Configurações de logging
 logging.basicConfig(
@@ -133,14 +135,16 @@ def processar_audio_item(audio_item, gerar_resumo=True, extrair_tags_entidades=T
             result = model.transcribe(caminho_destino, language="pt")
         info["tempo_transcricao"] = round(time.time() - t_trans_start, 2)
         texto_raw = result["text"].strip()
-        texto = formatar_texto_paragrafos(texto_raw)
+        texto_paragrafos = formatar_texto_paragrafos(texto_raw)
+        texto = aplicar_diarization_simulada(texto_paragrafos)
         info["transcricao"] = texto
 
-        # 2. Resumo com IA
+        # 2. Resumo e Enriquecimento com IA (Agente 4 e 5)
         if gerar_resumo:
-            info["status"] = "Gerando resumo (Ollama)"
+            info["status"] = "Gerando resumo e análise de IA (Ollama)"
             resumo_txt, t_res = gerar_resumo_ollama(texto, modelo=modelo_ollama)
-            info["resumo"] = resumo_txt
+            enriquecimento = enriquecer_transcricao_completa(texto, modelo=modelo_ollama)
+            info["resumo"] = resumo_txt + f"\n\n#### 🎯 Sentimento Geral: **{enriquecimento.get('sentimento', 'Neutro')}**"
             info["tempo_resumo"] = round(t_res, 2)
         else:
             info["resumo"] = "ℹ️ Resumo desativado."
