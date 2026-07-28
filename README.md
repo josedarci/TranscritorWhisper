@@ -50,6 +50,59 @@ Plataforma profissional de processamento de áudios em lote, transcrição autom
 
 ---
 
+## 🧰 GUIA DE INSTALAÇÃO DE CADA TECNOLOGIA (PRÉ-REQUISITOS)
+
+Antes de rodar a aplicação, certifique-se de ter as ferramentas instaladas. Abaixo estão os links e comandos oficiais para instalar cada uma:
+
+### 1. 🐳 Docker & Docker Compose
+Permite rodar todo o sistema pré-configurado sem instalar dependências manualmente.
+- **Windows**: Baixe o [Docker Desktop for Windows](https://www.docker.com/products/docker-desktop/) (necessita habilitar o recurso WSL2).
+- **macOS**: Baixe o [Docker Desktop for Mac](https://www.docker.com/products/docker-desktop/) (versão Apple Silicon M1/M2/M3 ou Intel).
+- **Linux (Ubuntu/Debian)**:
+  ```bash
+  sudo apt update && sudo apt install -y docker.io docker-compose-v2
+  sudo usermod -aG docker $USER
+  ```
+
+### 2. 🐍 Python (versão 3.10 ou superior)
+Linguagem utilizada para a interface Gradio, Whisper e módulos de IA.
+- **Windows**: Baixe em [python.org/downloads](https://www.python.org/downloads/).
+  > ⚠️ **Atenção**: Marque a caixa **"Add Python to PATH"** no início da instalação.
+- **macOS**: `brew install python`
+- **Linux**: `sudo apt install -y python3 python3-pip python3-venv`
+
+### 3. 🟢 Node.js & NPM (versão 18 ou superior)
+Runtime JavaScript utilizado para a API REST e conexão com o MySQL.
+- **Windows / macOS**: Baixe a versão LTS em [nodejs.org](https://nodejs.org/).
+- **Linux**: `curl -fsSL https://deb.nodesource.com/setup_20.x | sudo -E bash - && sudo apt install -y nodejs`
+
+### 4. 🐬 MySQL Server (versão 8.0 ou superior)
+Banco de dados relacional que armazena os metadados, transcrições e tags.
+- **Windows**: Baixe o [MySQL Community Installer](https://dev.mysql.com/downloads/installer/).
+- **macOS**: `brew install mysql && brew services start mysql`
+- **Linux**: `sudo apt install -y mysql-server && sudo systemctl enable --now mysql`
+
+### 5. 🦙 Ollama & Llama 3
+Servidor local de Inteligência Artificial para resumos e extração semântica.
+- **Windows**: Baixe o instalador `OllamaSetup.exe` em [ollama.com/download/windows](https://ollama.com/download/windows).
+- **macOS / Linux**:
+  ```bash
+  curl -fsSL https://ollama.com/install.sh | sh
+  ```
+- **Como baixar o modelo Llama 3**:
+  Após instalar, execute no terminal/PowerShell:
+  ```bash
+  ollama run llama3
+  ```
+
+### 6. 🎞️ FFmpeg (Obrigatório)
+Biblioteca essencial utilizada pelo Whisper para decodificar arquivos de áudio (`.mp3`, `.wav`, `.m4a`).
+- **Windows**: `winget install --id=Gyan.FFmpeg` ou `choco install ffmpeg`
+- **macOS**: `brew install ffmpeg`
+- **Linux**: `sudo apt install -y ffmpeg`
+
+---
+
 ## 📖 MANUAIS DE INSTALAÇÃO POR SISTEMA OPERACIONAL
 
 Selecione o seu sistema operacional ou método de preferência para ver as instruções completas:
