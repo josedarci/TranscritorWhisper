@@ -19,35 +19,175 @@ Plataforma profissional de processamento de áudios em lote, transcrição autom
 
 ## 🎯 Arquitetura do Sistema
 
+Seu projeto utiliza uma arquitetura moderna que combina **Inteligência Artificial, processamento paralelo, backend REST, banco de dados relacional e busca semântica**. Abaixo explicamos cada tecnologia, por que ela foi escolhida e qual é seu papel dentro da plataforma.
+
 ```text
-                                 ┌─────────────────────────────────┐
-                                 │     Interface Gradio Web UI     │
-                                 └────────────────┬────────────────┘
-                                                  │
-                                  ┌───────────────┴───────────────┐
-                                  ▼                               ▼
-                      ┌──────────────────────┐        ┌──────────────────────┐
-                      │ ThreadPoolExecutor   │        │ VectorStore & RAG    │
-                      │ (Process. Paralelo)  │        │ (Busca Semântica)    │
-                      └───────────┬──────────┘        └──────────────────────┘
-                                  │
-                 ┌────────────────┴────────────────┐
-                 ▼                                 ▼
-      ┌────────────────────┐            ┌────────────────────┐
-      │  OpenAI Whisper    │            │  Ollama Llama 3    │
-      │  (Transcrição)     │            │  (Resumos & Tags)  │
-      └──────────┬─────────┘            └──────────┬─────────┘
-                 │                                 │
-                 └────────────────┬────────────────┘
-                                  ▼
-                      ┌──────────────────────┐
-                      │ Node.js REST API     │
-                      └───────────┬──────────┘
-                                  ▼
-                      ┌──────────────────────┐
-                      │  MySQL Database v2   │
-                      └───────────┬──────────┘
+Usuário
+   │
+   ▼
+Gradio (Interface Web)
+   │
+   ▼
+ThreadPoolExecutor (Processamento Paralelo)
+   │
+   ▼
+Whisper (Transcrição Audio -> Texto)
+   │
+   ▼
+Ollama + Llama 3 (Resumos, Tags e Entidades)
+   │
+   ├──────────────────────────► VectorStore (ChromaDB / FAISS / Embeddings)
+   │                                  │
+   │                                  ▼
+   │                            Busca Semântica & Chat RAG
+   │                                  │
+   ▼                                  ▼
+Node.js + Express (API REST)
+   │
+   ▼
+MySQL (Persistência Relacional)
+   │
+   ▼
+Dashboard, Pesquisa, Exportação (TXT, MD, HTML)
 ```
+
+---
+
+### 1. 🐍 Python
+- **O que é**: Linguagem de programação amplamente utilizada em Inteligência Artificial, Machine Learning, Ciência de Dados e automação.
+- **Por que utilizar**: A maioria das bibliotecas de IA (Whisper, PyTorch, Transformers, LangChain, ChromaDB, FAISS) é desenvolvida primariamente em Python.
+- **No projeto**: Responsável por toda a camada de IA, execução do Whisper, chamadas ao Ollama, processamento paralelo, exportações, embeddings e chat RAG.
+
+---
+
+### 2. 🎨 Gradio
+- **O que é**: Framework Python para criação rápida de interfaces web interativas sem necessidade de escrever HTML, React ou Angular.
+- **No projeto**: É a interface visual principal. Permite upload de vários áudios em lote, controle do número de workers simultâneos, visualização em tempo real de transcrições, resumos, dashboard, pesquisa e chat RAG.
+
+---
+
+### 3. 🎙️ OpenAI Whisper
+- **O que é**: Modelo de IA de última geração desenvolvido pela OpenAI para conversão de fala em texto (Speech-to-Text).
+- **Funciona com**: `.mp3`, `.wav`, `.m4a`, `.ogg`, `.flac` em diversos idiomas.
+- **No projeto**: Responsável pela transcrição literal perfeita do áudio para o português, preservando nomes próprios e contexto.
+
+---
+
+### 4. 🎞️ FFmpeg
+- **O que é**: Biblioteca/utilitário multimídia indispensável para abrir, extrair, normalizar e converter formatos de áudio e vídeo.
+- **No projeto**: O Whisper depende internamente do FFmpeg para ler arquivos de áudio antes de passá-los aos tensores de inferência.
+
+---
+
+### 5. 🦙 Ollama
+- **O que é**: Servidor e gerenciador local para execução de LLMs (*Large Language Models*) diretamente no seu computador.
+- **Vantagem**: Roda sem dependência de internet, mantendo total privacidade dos dados e zero custos por requisição.
+- **No projeto**: Gerencia a execução do modelo Llama 3 para resumos, extração de entidades e chat RAG.
+
+---
+
+### 6. 🧠 Llama 3 (Meta)
+- **O que é**: Modelo de linguagem de grande porte (*LLM*) de última geração desenvolvido pela Meta.
+- **No projeto**: Atua como o "cérebro" de síntese. Recebe a transcrição bruta do Whisper e gera o resumo estruturado em tópicos, identifica categorias e extrai entidades em JSON.
+
+---
+
+### 7. ⚡ ThreadPoolExecutor
+- **O que é**: Módulo nativo de concorrência e multithreading do Python (`concurrent.futures`).
+- **No projeto**: Permite que múltiplos arquivos de áudio sejam processados simultaneamente em segundo plano (com controle ajustável de 1 a 8 workers), aumentando a velocidade de lotes grandes.
+
+---
+
+### 8. 🟢 Node.js
+- **O que é**: Ambiente de execução JavaScript assíncrono para desenvolvimento de serviços backend de alta performance.
+- **No projeto**: Hospeda a API REST intermediária, responsável por receber requisições do Python, validar dados e se comunicar com a base MySQL.
+
+---
+
+### 9. 🚀 Express.js
+- **O que é**: Framework web minimalista e flexível para Node.js.
+- **No projeto**: Estrutura as rotas da API REST (como `POST /api/salvar-completo`, `GET /api/transcricoes` e `GET /api/stats`).
+
+---
+
+### 10. 🔌 API REST (REpresentational State Transfer)
+- **O que é**: Arquitetura padrão de comunicação HTTP cliente-servidor baseada em JSON.
+- **No projeto**: Desacopla a camada de processamento de IA (Python) da camada de armazenamento (Node.js/MySQL).
+
+---
+
+### 11. 🐬 MySQL Database
+- **O que é**: Sistema de Gerenciamento de Banco de Dados Relacional (SGBD) confiável e amplamente utilizado no mercado.
+- **No projeto**: Persiste todas as transcrições, resumos, durações, tempos de execução, hashes SHA-256, tags e entidades estruturadas.
+
+---
+
+### 12. 📦 JSON (JavaScript Object Notation)
+- **O que é**: Formato leve de troca de dados estruturados.
+- **No projeto**: Utilizado para armazenar listas dinâmicas de tags e entidades extraídas (Pessoas, Empresas, Datas, Valores, Emails) nas colunas nativas JSON do MySQL.
+
+---
+
+### 13. 🔍 ChromaDB
+- **O que é**: Banco de dados vetorial de código aberto otimizado para aplicações de IA e pesquisas semânticas.
+- **No projeto**: Indexa as transcrições para permitir buscas por conceito/significado e não apenas por palavras exatas.
+
+---
+
+### 14. ⚡ FAISS (Facebook AI Similarity Search)
+- **O que é**: Biblioteca de busca por similaridade vetorial de altíssima velocidade desenvolvida pela Meta AI.
+- **No projeto**: Trabalha em conjunto para indexar vetores e acelerar consultas conceituais em grandes volumes de áudio.
+
+---
+
+### 15. 🧮 Embeddings Vetoriais
+- **O que é**: Representação de textos na forma de vetores numéricos de alta dimensão que capturam o significado conceitual das palavras.
+- **No projeto**: Transforma cada frase da transcrição em vetores para viabilizar a busca por contexto.
+
+---
+
+### 16. 💬 RAG (Retrieval-Augmented Generation)
+- **O que é**: Técnica avançada que combina busca em banco de dados vetorial com modelos LLM.
+- **No projeto**: Alimenta a aba de Chat RAG. O sistema recupera os trechos do áudio escolhido e instrui o Llama 3 a responder à pergunta do usuário **apenas** com base naquele contexto, eliminando alucinações.
+
+---
+
+### 17. 🐳 Docker
+- **O que é**: Plataforma de virtualização em nível de sistema operacional que empacota a aplicação e suas dependências em contêineres isolados.
+- **No projeto**: Garante que os contêineres do Python, Node.js e MySQL rodem exatamente com as mesmas versões em qualquer sistema.
+
+---
+
+### 18. 🐙 Docker Compose
+- **O que é**: Ferramenta para definir e rodar aplicações multi-contêiner Docker através de um único arquivo de configuração (`docker-compose.yml`).
+- **No projeto**: Permite subir toda a infraestrutura da plataforma com um único comando: `docker compose up`.
+
+---
+
+### 19. 🔑 Variáveis de Ambiente (`.env`)
+- **O que é**: Padrão de segurança para armazenar credenciais, hosts, portas e chaves secretas fora do código-fonte.
+- **No projeto**: Centraliza em `.env` as configurações de conexões com MySQL, Ollama e rotas da API REST.
+
+---
+
+### 20. 🧪 Testes Unitários (`unittest`)
+- **O que é**: Prática de engenharia de software para testar módulos isoladamente e prevenir regressões.
+- **No projeto**: Suíte em `tests/test_transcritor.py` que valida automaticamente os exportadores (TXT, MD, HTML) e o motor de busca vetorial.
+
+---
+
+## 🏗️ Por que essa arquitetura é moderna e escalável?
+
+Essa arquitetura separa claramente as responsabilidades:
+- **Python** cuida de toda a Inteligência Artificial, transcrição e vetorização.
+- **Whisper** transforma fala em texto.
+- **Ollama + Llama 3** interpretam o conteúdo, gerando resumos, tags e respostas.
+- **Node.js + Express** oferecem uma API REST organizada e desacoplada.
+- **MySQL** mantém o histórico relacional seguro e estruturado.
+- **VectorStore (ChromaDB/FAISS)** torna possível pesquisar por significado e realizar conversas via RAG.
+- **Gradio** entrega uma interface fluida, moderna e sem complexidade de frontend.
+
+Essa abordagem modular permite que qualquer componente seja atualizado ou escalado no futuro (ex: migrar para GPU na nuvem ou trocar o modelo de LLM) sem precisar reescrever o sistema!
 
 ---
 
