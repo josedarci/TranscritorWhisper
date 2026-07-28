@@ -17,7 +17,7 @@ whisper_lock = threading.Lock()
 
 from services.ai_extractor import gerar_tags_e_categorias, extrair_entidades
 from services.vector_store import vector_store_global
-from services.exporter import exportar_txt, exportar_markdown, exportar_html, exportar_pdf_ata_operacional
+from services.exporter import exportar_txt, exportar_markdown, exportar_html, exportar_pdf_ata_operacional, formatar_data_br
 
 # Configurações de logging
 logging.basicConfig(
@@ -294,8 +294,9 @@ def realizar_pesquisa(termo_busca):
             if dados:
                 resultados_formatados.append("\n🗄️ RESULTADOS DO BANCO DE DADOS (MySQL):\n" + "-"*40)
                 for item in dados:
+                    dt = formatar_data_br(item.get('data_upload'))
                     resultados_formatados.append(
-                        f"📄 {item['nome_arquivo']} | Data: {item.get('data_upload', 'N/A')}\n"
+                        f"📄 {item['nome_arquivo']} | Data: {dt}\n"
                         f"Resumo: {item.get('resumo', 'Sem resumo')[:200]}...\n"
                     )
     except Exception as e:
@@ -356,7 +357,7 @@ def carregar_acervo_grid(filtro=""):
                 duracao = f"{round(item.get('duracao_segundos', 0)/60, 1)} min" if item.get('duracao_segundos') else "N/A"
                 palavras = item.get("quantidade_palavras", 0)
                 tem_transcricao = "✅ Sim" if item.get("texto") and len(item["texto"]) > 10 else "❌ Não"
-                data_up = str(item.get("data_upload", "N/A"))[:19].replace("T", " ")
+                data_up = formatar_data_br(item.get("data_upload"))
                 grid_data.append({
                     "ID": item.get("id"),
                     "Nome do Arquivo": item.get("nome_arquivo"),
@@ -409,7 +410,7 @@ def abrir_modal_detalhes(id_ou_nome):
             if entidades_json.get("datas"): entidades_md += f"- 📅 **Datas/Prazos**: {', '.join(entidades_json['datas'])}\n"
             if entidades_json.get("valores"): entidades_md += f"- 💰 **Valores**: {', '.join(entidades_json['valores'])}\n"
 
-        data_formatada = str(item.get('data_upload', 'N/A'))[:19].replace("T", " ")
+        data_formatada = formatar_data_br(item.get('data_upload'))
 
         md = f"""## 📄 Inspeção da Transcrição: `{item.get('nome_arquivo')}`
 

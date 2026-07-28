@@ -27,14 +27,36 @@ def sanitize_pdf(text):
         return ""
     return str(text).encode('latin-1', 'replace').decode('latin-1')
 
+def formatar_data_br(data_input):
+    """Converte ISO/datetime (ex: '2026-07-28T18:31:46.000Z') para 'DD/MM/YYYY HH:MM'."""
+    if not data_input or str(data_input).strip() in ["N/A", "None", ""]:
+        return "N/A"
+    try:
+        d_str = str(data_input).replace("Z", "").split(".")[0].replace("T", " ").strip()
+        if " " in d_str:
+            dt_part, time_part = d_str.split(" ")
+            time_part = ":".join(time_part.split(":")[:2])
+        else:
+            dt_part = d_str
+            time_part = "00:00"
+        
+        parts = dt_part.split("-")
+        if len(parts) == 3 and len(parts[0]) == 4:
+            ano, mes, dia = parts
+            return f"{dia}/{mes}/{ano} {time_part}"
+    except Exception:
+        pass
+    return str(data_input)
+
 def exportar_txt(nome_arquivo, transcricao, resumo=None, meta=None):
     """Gera exportação em formato TXT simples."""
+    data_formatada = formatar_data_br(meta.get('data_upload') if meta else None)
     conteudo = [
         f"==================================================",
         f" RELATÓRIO DE TRANSCRIÇÃO: {nome_arquivo}",
         f"==================================================\n",
         f"METADADOS:",
-        f"• Data: {meta.get('data_upload', 'N/A') if meta else 'N/A'}",
+        f"• Data: {data_formatada}",
         f"• Duração: {meta.get('duracao_segundos', 0) if meta else 0}s",
         f"• Palavras: {meta.get('quantidade_palavras', 0) if meta else 0}",
         f"• Usuário: {meta.get('usuario', 'sistema') if meta else 'sistema'}\n",
@@ -51,10 +73,11 @@ def exportar_txt(nome_arquivo, transcricao, resumo=None, meta=None):
 
 def exportar_markdown(nome_arquivo, transcricao, resumo=None, meta=None):
     """Gera exportação em formato Markdown (.md)."""
+    data_formatada = formatar_data_br(meta.get('data_upload') if meta else None)
     conteudo = [
         f"# 🎙️ Relatório de Transcrição: `{nome_arquivo}`\n",
         f"## 📋 Metadados do Processamento",
-        f"- **Data de Upload**: `{meta.get('data_upload', 'N/A') if meta else 'N/A'}`",
+        f"- **Data de Upload**: `{data_formatada}`",
         f"- **Tempo de Processamento**: `{meta.get('tempo_total', 0) if meta else 0}s`",
         f"- **Total de Palavras**: `{meta.get('quantidade_palavras', 0) if meta else 0}`",
         f"- **Modelo Whisper**: `{meta.get('modelo_whisper', 'base') if meta else 'base'}`",
@@ -70,6 +93,7 @@ def exportar_html(nome_arquivo, transcricao, resumo=None, meta=None):
     """Gera exportação em formato HTML estilizado."""
     resumo_html = (resumo or "Sem resumo").replace("\n", "<br>")
     transcricao_html = transcricao.replace("\n", "<br>")
+    data_formatada = formatar_data_br(meta.get('data_upload') if meta else None)
 
     return f"""<!DOCTYPE html>
 <html lang="pt-BR">
@@ -89,7 +113,7 @@ def exportar_html(nome_arquivo, transcricao, resumo=None, meta=None):
     <div class="container">
         <h1>🎙️ Relatório: {nome_arquivo}</h1>
         <div class="meta-card">
-            <strong>Data:</strong> {meta.get('data_upload', 'N/A') if meta else 'N/A'} |
+            <strong>Data:</strong> {data_formatada} |
             <strong>Palavras:</strong> {meta.get('quantidade_palavras', 0) if meta else 0} |
             <strong>Tempo Total:</strong> {meta.get('tempo_total', 0) if meta else 0}s
         </div>
@@ -112,7 +136,7 @@ def exportar_pdf_ata_operacional(nome_arquivo, transcricao, resumo=None, meta=No
     pdf.set_auto_page_break(auto=True, margin=15)
 
     meta_info = meta or {}
-    data_sessao = meta_info.get("data_upload", "2026-07-28")
+    data_sessao = formatar_data_br(meta_info.get("data_upload"))
     duracao_seg = meta_info.get("duracao_segundos", 0)
     duracao_min = round(duracao_seg / 60, 1) if duracao_seg else "N/A"
     palavras = meta_info.get("quantidade_palavras", len(transcricao.split()))
