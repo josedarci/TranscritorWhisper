@@ -343,11 +343,16 @@ Este guia explica detalhadamente como utilizar cada uma das 5 abas da plataforma
 
 ---
 
-### 📥 5. Aba: Exportar Relatório
-- **Objetivo**: Baixar relatórios individuais estilizados.
+### 📥 5. Aba: Exportar Relatório e Atas em PDF
+- **Objetivo**: Baixar relatórios individuais e Atas Formais de Reunião Operacional em PDF estilizados e prontos para impressão e assinatura.
 - **Como Usar**:
-  1. Escolha o formato de saída: **TXT** (texto simples), **Markdown (.md)** (estruturado) ou **HTML estilizado** (design visual com CSS).
-  2. Clique no botão de download para baixar o relatório formatado.
+  1. Digite o nome do arquivo (ex: `250704_001.mp3`).
+  2. Escolha o formato de saída:
+     - 📝 **PDF (Ata Operacional)**: Documento formal estruturado com quadro de controle, resumo executivo, entidades NER, transcrição e **campo para visto e assinatura do responsável**.
+     - 📄 **TXT**: Texto simples com metadados e resumo.
+     - 📝 **Markdown (.md)**: Documento estruturado para editores de código e documentações.
+     - 🌐 **HTML Estilizado**: Visualização rica com CSS embutido.
+  3. Clique no botão **"📝 Gerar e Baixar Documento Exportado"** e faça o download direto do arquivo PDF/documento no componente de download.
 
 ---
 
