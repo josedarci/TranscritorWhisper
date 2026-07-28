@@ -379,6 +379,39 @@ def gerar_exportacao(nome_arquivo, tipo_formato):
         return f"Erro ao gerar exportação: {e}", None
     return f"Transcrição para '{nome_limpo}' não foi localizada no banco de dados.", None
 
+def listar_usuarios_admin():
+    """Retorna o DataFrame dos usuários cadastrados na API Node.js/MySQL v3 (Agente 8 - Admin)."""
+    try:
+        res = requests.get(f"{API_BASE}/usuarios", timeout=5)
+        if res.status_code == 200:
+            dados = res.json()
+            if isinstance(dados, list):
+                df = pd.DataFrame(dados)
+                df = df.rename(columns={
+                    "id": "ID", "empresa_id": "ID Empresa", "nome": "Nome",
+                    "email": "Email", "cargo": "Cargo"
+                })
+                return df
+    except Exception as e:
+        logging.warning(f"Erro ao listar usuários no Admin: {e}")
+    return pd.DataFrame(columns=["ID", "ID Empresa", "Nome", "Email", "Cargo"])
+
+def cadastrar_usuario_ui(nome, email, senha, cargo):
+    """Cadastra um novo usuário no banco de dados via API REST /api/auth/register (Agente 2 & 9)."""
+    if not nome or not email or not senha:
+        return "⚠️ Preencha Nome, Email e Senha.", listar_usuarios_admin()
+
+    try:
+        res = requests.post(f"{API_BASE}/auth/register", json={
+            "nome": nome, "email": email, "senha": senha, "empresa_id": 1, "cargo": cargo or "Analista"
+        }, timeout=5)
+        if res.status_code == 200:
+            return f"✅ Usuário '{nome}' cadastrado com sucesso!", listar_usuarios_admin()
+        else:
+            return f"⚠️ Erro ao cadastrar: {res.json().get('erro', 'Falha na requisição')}", listar_usuarios_admin()
+    except Exception as e:
+        return f"⚠️ Falha na API: {e}", listar_usuarios_admin()
+
 def melhorar_audio_ffmpeg(caminho_entrada):
     """
     Aplica filtros avançados de áudio via FFmpeg para clareza vocal máxima:
@@ -752,5 +785,26 @@ with gr.Blocks(title="🎙️ Transcritor Inteligente v2.0 Enterprise", theme=gr
                 out_file_pdf = gr.File(label="📥 Download Direto do PDF (Ata Operacional)")
 
             btn_export.click(fn=gerar_exportacao, inputs=[input_nome_exp, radio_formato], outputs=[out_export, out_file_pdf])
+
+        # ABA 7: Administração, Usuários & Segurança Enterprise (Agente 8 & 9)
+        with gr.TabItem("🔐 Administração & Usuários"):
+            gr.Markdown("### 🔐 Painel Administrativo de Usuários & Multi-Tenant")
+            with gr.Row():
+                with gr.Column(scale=1):
+                    gr.Markdown("#### ➕ Novo Usuário")
+                    u_nome = gr.Textbox(label="Nome Completo", placeholder="Ex: Maria Silva")
+                    u_email = gr.Textbox(label="E-mail de Acesso", placeholder="exemplo@empresa.com")
+                    u_senha = gr.Textbox(label="Senha Inicial", type="password")
+                    u_cargo = gr.Dropdown(choices=["Administrador", "Gerente", "Analista", "Operador"], label="Cargo", value="Analista")
+                    btn_cadastrar_u = gr.Button("👤 Cadastrar Usuário", variant="primary")
+                    out_status_u = gr.Markdown(value="")
+
+                with gr.Column(scale=2):
+                    gr.Markdown("#### 👥 Usuários Cadastrados no Banco (MySQL v3)")
+                    grid_usuarios = gr.Dataframe(value=listar_usuarios_admin, interactive=False)
+                    btn_refresh_u = gr.Button("🔄 Atualizar Lista de Usuários")
+
+            btn_cadastrar_u.click(fn=cadastrar_usuario_ui, inputs=[u_nome, u_email, u_senha, u_cargo], outputs=[out_status_u, grid_usuarios])
+            btn_refresh_u.click(fn=listar_usuarios_admin, inputs=[], outputs=[grid_usuarios])
 
 demo.launch(server_name="127.0.0.1", server_port=7860)

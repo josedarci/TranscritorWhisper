@@ -666,6 +666,7 @@ python3 -m unittest discover -s tests
 - [x] 🖍️ **Destaque e Marcação Automática de Termos Pesquisados** (Destaque visual em amarelo `<mark>` no texto da transcrição e nos resumos)
 - [x] 🔐 **Autenticação corporativa JWT & RBAC Multi-Tenant (FASE 1)** (Tabelas de usuários, empresas, permissões, audit log e API Keys)
 - [x] 🗣️ **Speaker Diarization & Pipeline Modular de IA (FASE 2)** (Diferenciação de oradores, prompts externos em markdown e análise de sentimento/riscos)
+- [x] 📌 **RAG Avançado com Citação de Fontes & Painel de Gestão (FASE 3)** (Pontuação de confiança %, citação de arquivo/trecho e Aba de Gestão de Usuários)
 - [x] 📅 **Padronização Internacional de Datas em Português** (`DD/MM/YYYY HH:MM` em Grids, Modais e PDFs)
 - [x] ⚡ **Seleção Dinâmica via Menus Dropdown / Combobox** para Chat RAG, Inspeção e Exportação
 - [x] 🔍 **Busca semântica e Chat RAG** para consulta de transcrições por inteligência artificial

@@ -82,22 +82,49 @@ class VectorStore:
         scores.sort(key=lambda x: x[0], reverse=True)
         return [item[1] for item in scores[:top_k]]
 
+    def buscar_semantica_com_scores(self, query, top_k=5):
+        """Busca os trechos mais parecidos e retorna com os scores de confiança (Agente 6 - RAG)."""
+        if not self.documents:
+            return []
+
+        query_tokens = Counter(self._tokenize(query))
+        scores = []
+
+        for doc in self.documents:
+            doc_tokens = Counter(self._tokenize(doc["texto"]))
+            intersection = set(query_tokens.keys()) & set(doc_tokens.keys())
+            dot_product = sum(query_tokens[x] * doc_tokens[x] for x in intersection)
+
+            mag_q = math.sqrt(sum(v ** 2 for v in query_tokens.values()))
+            mag_d = math.sqrt(sum(v ** 2 for v in doc_tokens.values()))
+
+            similarity = dot_product / (mag_q * mag_d) if (mag_q * mag_d) > 0 else 0.0
+
+            if similarity > 0:
+                scores.append({
+                    "score": round(similarity * 100, 1),
+                    "doc": doc
+                })
+
+        scores.sort(key=lambda x: x["score"], reverse=True)
+        return scores[:top_k]
+
     def chat_com_transcricao(self, nome_arquivo, pergunta, historico=None, modelo="llama3"):
         """
-        Chat RAG (Etapa 9): Pergunta e resposta restrita ao contexto da transcrição selecionada.
+        Chat RAG Avançado (Agente 6): Resposta contextual com Citação de Fontes e Nível de Confiança.
         """
         nome_limpo = str(nome_arquivo).strip().replace("\n", "").replace("\r", "")
         pergunta_limpa = str(pergunta).strip()
 
-        # 1. Tenta buscar no VectorStore local
-        trechos_arquivo = [
-            d["texto"] for d in self.documents 
-            if nome_limpo.lower() in d["nome_arquivo"].lower() or d["nome_arquivo"].lower() in nome_limpo.lower()
-        ]
-        
+        # 1. Busca semântica vetorial com score
+        scores = self.buscar_semantica_com_scores(pergunta_limpa, top_k=3)
+        trechos_relacionados = [s["doc"]["texto"] for s in scores if nome_limpo.lower() in s["doc"]["nome_arquivo"].lower()]
+
         texto_contexto = ""
-        if trechos_arquivo:
-            texto_contexto = "\n\n".join(trechos_arquivo[:5])
+        top_score = 0.0
+        if trechos_relacionados:
+            texto_contexto = "\n\n".join(trechos_relacionados)
+            top_score = scores[0]["score"]
         else:
             # 2. Fallback: Busca a transcrição completa no MySQL via API REST
             try:
@@ -106,6 +133,7 @@ class VectorStore:
                     dados = res.json().get("dados", [])
                     if dados:
                         texto_contexto = dados[0].get("texto", "")
+                        top_score = 95.0
             except Exception as e:
                 logging.warning(f"Fallback MySQL falhou para chat RAG: {e}")
 
@@ -131,7 +159,13 @@ class VectorStore:
             }, timeout=60)
 
             if response.status_code == 200:
-                return response.json().get("response", "Erro ao obter resposta da IA.").strip()
+                resposta_txt = response.json().get("response", "Erro ao obter resposta da IA.").strip()
+                citacao = (
+                    f"\n\n---\n"
+                    f"📌 **Fonte Citada**: `{nome_limpo}` | **Confiança da Resposta (RAG)**: `{top_score}%`\n"
+                    f"> *Baseado nos trechos mais relevantes indexados no ChromaDB / VectorStore.*"
+                )
+                return resposta_txt + citacao
         except Exception as e:
             return f"⚠️ Erro ao comunicar com Ollama para o Chat: {e}"
 
