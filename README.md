@@ -50,6 +50,70 @@ Plataforma profissional de processamento de áudios em lote, transcrição autom
 
 ---
 
+## 💡 TUTORIAL COMPLETO DE USO E GUIA DE CADA FUNCIONALIDADE
+
+Este guia explica detalhadamente como utilizar cada uma das 5 abas da plataforma, com instruções passo a passo e a explicação do que ocorre nos bastidores.
+
+---
+
+### 🎙️ 1. Aba: Transcrição em Lote
+- **Objetivo**: Enviar múltiplos arquivos de áudio simultaneamente, transcrevê-los em paralelo, gerar resumos em Português e extrair tags/entidades.
+- **Como Usar**:
+  1. Arraste ou clique no campo de upload para selecionar seus arquivos de áudio (`.mp3`, `.wav`, `.m4a`).
+  2. Marque a opção **"Gerar Resumo Inteligente (Ollama)"** para síntese em tópicos.
+  3. Marque a opção **"Extrair Tags e Entidades Automáticas"** para obter Pessoas, Empresas, Datas, Valores e Emails.
+  4. Ajuste o controle deslizante **"Workers Simultâneos"** (de 1 a 8 simultâneos) conforme a capacidade do seu computador.
+  5. Clique em **"🚀 Processar Lote de Áudios"**.
+- **Nos Bastidores**:
+  - O `ThreadPoolExecutor` distribui os áudios entre os trabalhadores em paralelo.
+  - Cada áudio é copiado com UUID único para `./uploads/`.
+  - A transcrição é executada pelo Whisper com `threading.Lock()` para garantir thread-safety do PyTorch.
+  - O Ollama (Llama 3) gera o resumo e extrai o JSON de entidades.
+  - Todos os metadados, tempos por etapa e hash SHA-256 são gravados via API REST no MySQL.
+
+---
+
+### 🔍 2. Aba: Pesquisa & Histórico
+- **Objetivo**: Consultar e filtrar transcrições anteriores por palavra-chave ou similaridade semântica por IA.
+- **Como Usar**:
+  1. Digite o termo ou conceito desejado no campo de busca (ex: *"contrato"*, *"orçamento"*, *"Azure"*).
+  2. Clique em **"🔍 Pesquisar"**.
+  3. Veja a lista com transcrição íntegra, resumo, tags e duração de cada arquivo.
+- **Nos Bastidores**:
+  - O sistema realiza consultas `LIKE` no MySQL combinando a busca com o `VectorStore` (algoritmo de distância por cosseno) para retornar resultados semanticamente alinhados.
+
+---
+
+### 📊 3. Aba: Dashboard & Estatísticas
+- **Objetivo**: Visualizar métricas executivas agregadas da plataforma.
+- **Como Usar**:
+  1. Clique na aba **Dashboard & Estatísticas**.
+  2. Clique no botão **"🔄 Atualizar Estatísticas"**.
+  3. Veja os indicadores globais: total de áudios, horas acumuladas, total de palavras e tempo médio por áudio.
+- **Nos Bastidores**:
+  - O frontend consulta o endpoint GET `/api/stats` da API Node.js, executando queries `SUM`, `COUNT` e `AVG` no MySQL.
+
+---
+
+### 💬 4. Aba: Chat RAG com Áudio
+- **Objetivo**: Fazer perguntas e obter respostas fundamentadas exclusivamente no texto de um áudio específico.
+- **Como Usar**:
+  1. Digite o nome do arquivo de áudio desejado (ex: `250704_001.mp3`).
+  2. Digite sua pergunta no chat (ex: *"Quem ficou responsável pelo relatório?"*).
+  3. Clique em **"Enviar"**.
+- **Nos Bastidores**:
+  - O sistema busca o texto da transcrição no MySQL e aplica RAG (*Retrieval-Augmented Generation*), garantindo que o Llama 3 responda baseado **estritamente** naquele áudio.
+
+---
+
+### 📥 5. Aba: Exportar Relatório
+- **Objetivo**: Baixar relatórios individuais estilizados.
+- **Como Usar**:
+  1. Escolha o formato de saída: **TXT** (texto simples), **Markdown (.md)** (estruturado) ou **HTML estilizado** (design visual com CSS).
+  2. Clique no botão de download para baixar o relatório formatado.
+
+---
+
 ## 🧰 GUIA DE INSTALAÇÃO DE CADA TECNOLOGIA (PRÉ-REQUISITOS)
 
 Antes de rodar a aplicação, certifique-se de ter as ferramentas instaladas. Abaixo estão os links e comandos oficiais para instalar cada uma:
