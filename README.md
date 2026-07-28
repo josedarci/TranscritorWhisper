@@ -667,6 +667,7 @@ python3 -m unittest discover -s tests
 - [x] 🔐 **Autenticação corporativa JWT & RBAC Multi-Tenant (FASE 1)** (Tabelas de usuários, empresas, permissões, audit log e API Keys)
 - [x] 🗣️ **Speaker Diarization & Pipeline Modular de IA (FASE 2)** (Diferenciação de oradores, prompts externos em markdown e análise de sentimento/riscos)
 - [x] 📌 **RAG Avançado com Citação de Fontes & Painel de Gestão (FASE 3)** (Pontuação de confiança %, citação de arquivo/trecho e Aba de Gestão de Usuários)
+- [x] 📱 **Integração Mobile & Testes Automatizados & CI/CD (FASE 4)** (Endpoints móveis Android/iOS, suíte de testes unitários e GitHub Actions)
 - [x] 📅 **Padronização Internacional de Datas em Português** (`DD/MM/YYYY HH:MM` em Grids, Modais e PDFs)
 - [x] ⚡ **Seleção Dinâmica via Menus Dropdown / Combobox** para Chat RAG, Inspeção e Exportação
 - [x] 🔍 **Busca semântica e Chat RAG** para consulta de transcrições por inteligência artificial
@@ -674,7 +675,6 @@ python3 -m unittest discover -s tests
 - [x] 📊 **Dashboard com métricas executivas** e **exportação em múltiplos formatos** (TXT, Markdown, HTML)
 - [x] 📝 **Geração automática de atas operacionais de reunião em PDF** (Documentos formais estilizados para impressão, visto e assinatura)
 - [x] 🐳 **Deploy simplificado via Docker & Docker Compose** (MySQL + Node.js + Python App)
-- [ ] 📱 Aplicativo móvel integrado para gravação e envio direto à API privada
 
 ---
 

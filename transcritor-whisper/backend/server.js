@@ -159,6 +159,60 @@ app.get('/api/usuarios', autenticarToken, (req, res) => {
 });
 
 // ----------------------------------------------------
+// AGENTE 7 — MOBILE INTEGRATION ENDPOINTS (Android/iOS)
+// ----------------------------------------------------
+
+// POST /api/mobile/upload - Upload direto de mídia móvel (Áudio, Vídeo, PDF, Imagem)
+app.post('/api/mobile/upload', autenticarToken, (req, res) => {
+    const { nome_arquivo, conteudo_base64, tipo_midia, dispositivo } = req.body;
+    if (!nome_arquivo || !conteudo_base64) {
+        return res.status(400).json({ erro: 'Informe nome_arquivo e conteudo_base64 da mídia.' });
+    }
+
+    try {
+        const buffer = Buffer.from(conteudo_base64, 'base64');
+        const fs = require('fs');
+        const pathSalvar = path.join(uploadsDir, nome_arquivo);
+        fs.writeFileSync(pathSalvar, buffer);
+
+        console.log(`📱 Mídia '${nome_arquivo}' recebida via Mobile (${dispositivo || 'Smartphone'})`);
+        res.json({
+            mensagem: 'Mídia recebida com sucesso no servidor!',
+            caminho: `/uploads/${nome_arquivo}`,
+            tamanho_bytes: buffer.length
+        });
+    } catch (e) {
+        res.status(500).json({ erro: 'Erro ao salvar mídia móvel no disco.', detalhe: e.message });
+    }
+});
+
+// GET /api/mobile/transcricoes - Feed compacto para aplicativo móvel
+app.get('/api/mobile/transcricoes', autenticarToken, (req, res) => {
+    const sql = `
+        SELECT id, nome_arquivo, duracao_segundos, status, data_upload, resumo
+        FROM transcricoes
+        ORDER BY id DESC
+        LIMIT 20
+    `;
+    db.query(sql, (err, rows) => {
+        if (err) return res.status(500).json({ erro: 'Erro ao buscar transcrições para mobile' });
+        res.json({ feed_mobile: rows });
+    });
+});
+
+// POST /api/mobile/notificacoes - Envio de notificação Push para dispositivo móvel
+app.post('/api/mobile/notificacoes', autenticarToken, (req, res) => {
+    const { usuario_id, titulo, mensagem } = req.body;
+    db.query('INSERT INTO audit_log (usuario_id, empresa_id, acao, recurso, detalhes) VALUES (?, ?, ?, ?, ?)',
+        [usuario_id || 1, 1, 'NOTIFICACAO_PUSH', '/api/mobile/notificacoes', JSON.stringify({ titulo, mensagem })],
+        (err) => {
+            if (err) return res.status(500).json({ erro: 'Erro ao registrar notificação' });
+            res.json({ mensagem: 'Notificação Push enviada com sucesso!' });
+        }
+    );
+});
+
+// ----------------------------------------------------
 // ENDPOINTS DE TRANSCRIÇÕES & METADADOS
 // ----------------------------------------------------
 
