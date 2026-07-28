@@ -86,21 +86,40 @@ class VectorStore:
         """
         Chat RAG (Etapa 9): Pergunta e resposta restrita ao contexto da transcrição selecionada.
         """
-        trechos_arquivo = [d["texto"] for d in self.documents if d["nome_arquivo"] == nome_arquivo]
+        nome_limpo = str(nome_arquivo).strip().replace("\n", "").replace("\r", "")
+        pergunta_limpa = str(pergunta).strip()
+
+        # 1. Tenta buscar no VectorStore local
+        trechos_arquivo = [
+            d["texto"] for d in self.documents 
+            if nome_limpo.lower() in d["nome_arquivo"].lower() or d["nome_arquivo"].lower() in nome_limpo.lower()
+        ]
         
-        if not trechos_arquivo:
-            contexto = f"Apenas a transcrição de '{nome_arquivo}' está sendo consultada."
+        texto_contexto = ""
+        if trechos_arquivo:
+            texto_contexto = "\n\n".join(trechos_arquivo[:5])
         else:
-            contexto = "\n\n".join(trechos_arquivo[:5]) # Usa os primeiros chunks principais
+            # 2. Fallback: Busca a transcrição completa no MySQL via API REST
+            try:
+                res = requests.get("http://localhost:3001/api/transcricoes", params={"q": nome_limpo, "limit": 1}, timeout=5)
+                if res.status_code == 200:
+                    dados = res.json().get("dados", [])
+                    if dados:
+                        texto_contexto = dados[0].get("texto", "")
+            except Exception as e:
+                logging.warning(f"Fallback MySQL falhou para chat RAG: {e}")
+
+        if not texto_contexto:
+            return f"⚠️ Não foi possível encontrar a transcrição para o arquivo '{nome_limpo}' no banco de dados."
 
         prompt = (
             "ATENÇÃO: Responda EXCLUSIVAMENTE em Português do Brasil.\n"
             "Sua tarefa é responder à pergunta do usuário baseando-se UNICAMENTE no contexto da transcrição abaixo.\n"
             "Se a resposta não estiver presente no contexto, diga claramente 'Esta informação não consta na transcrição'.\n\n"
-            f"--- CONTEXTO DA TRANSCRIÇÃO ({nome_arquivo}) ---\n"
-            f"{contexto[:4000]}\n"
+            f"--- CONTEXTO DA TRANSCRIÇÃO ({nome_limpo}) ---\n"
+            f"{texto_contexto[:4000]}\n"
             f"--- FIM DO CONTEXTO ---\n\n"
-            f"PERGUNTA DO USUÁRIO: {pergunta}\n\n"
+            f"PERGUNTA DO USUÁRIO: {pergunta_limpa}\n\n"
             "RESPOSTA CONCISA E DIRETA:"
         )
 
