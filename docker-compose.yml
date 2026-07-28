@@ -1,0 +1,68 @@
+version: '3.8'
+
+services:
+  mysql-db:
+    image: mysql:8.0
+    container_name: transcritor_mysql
+    restart: always
+    environment:
+      MYSQL_ROOT_PASSWORD: ${DB_PASSWORD:-REDACTED_PASSWORD}
+      MYSQL_DATABASE: ${DB_NAME:-joseda34_site}
+      MYSQL_USER: ${DB_USER:-joseda34_dev}
+      MYSQL_PASSWORD: ${DB_PASSWORD:-REDACTED_PASSWORD}
+    ports:
+      - "${DB_PORT:-3306}:3306"
+    volumes:
+      - mysql_data:/var/lib/mysql
+      - ./database/migration_v2.sql:/docker-entrypoint-initdb.d/migration_v2.sql
+    networks:
+      - transcritor-net
+
+  backend-node:
+    build:
+      context: ./transcritor-whisper/backend
+      dockerfile: Dockerfile
+    container_name: transcritor_backend
+    restart: always
+    environment:
+      NODE_PORT: 3001
+      DB_HOST: mysql-db
+      DB_USER: ${DB_USER:-joseda34_dev}
+      DB_PASSWORD: ${DB_PASSWORD:-REDACTED_PASSWORD}
+      DB_NAME: ${DB_NAME:-joseda34_site}
+    ports:
+      - "3001:3001"
+    depends_on:
+      - mysql-db
+    volumes:
+      - ./uploads:/app/uploads
+    networks:
+      - transcritor-net
+
+  python-app:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: transcritor_python
+    restart: always
+    environment:
+      GRADIO_HOST: 0.0.0.0
+      GRADIO_PORT: 7860
+      OLLAMA_URL: http://host.docker.internal:11434/api/generate
+      API_BASE_URL: http://backend-node:3001
+    ports:
+      - "7860:7860"
+    depends_on:
+      - backend-node
+    volumes:
+      - ./uploads:/app/uploads
+      - ./logs:/app/logs
+    networks:
+      - transcritor-net
+
+volumes:
+  mysql_data:
+
+networks:
+  transcritor-net:
+    driver: bridge
