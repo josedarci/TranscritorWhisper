@@ -13,6 +13,7 @@ Plataforma profissional de processamento de áudios em lote, transcrição autom
 ![Ollama](https://img.shields.io/badge/Ollama_Llama_3-000000?style=for-the-badge&logo=ollama&logoColor=white)
 ![Gradio](https://img.shields.io/badge/Gradio-FF7C00?style=for-the-badge&logo=gradio&logoColor=white)
 ![FFmpeg](https://img.shields.io/badge/FFmpeg-007808?style=for-the-badge&logo=ffmpeg&logoColor=white)
+![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg?style=for-the-badge)
 
 ---
 
@@ -403,3 +404,12 @@ Para rodar a suíte de testes unitários automatizados:
 ```bash
 python3 -m unittest discover -s tests
 ```
+
+---
+
+## 📜 Licença & Open Source
+
+Este projeto é **Open Source** e está licenciado sob a **[MIT License](LICENSE)**.
+
+Você é livre para usar, copiar, modificar, mesclar, publicar, distribuir, sublicenciar e/ou vender cópias deste software de forma totalmente gratuita e ilimitada.
+
