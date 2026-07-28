@@ -535,8 +535,9 @@ with gr.Blocks(title="🎙️ Transcritor Inteligente v2.0 Enterprise", theme=gr
                 headers=["ID", "Nome do Arquivo", "Data Upload", "Duração", "Palavras", "Status", "Transcrição Disponível?"],
                 datatype=["number", "str", "str", "str", "str", "str", "str"],
                 col_count=(7, "fixed"),
+                type="pandas",
                 label="📊 Lista de Áudios e Metadados do Banco de Dados (MySQL) - Clique em qualquer linha para abrir!",
-                interactive=False
+                interactive=True
             )
 
             gr.Markdown("---")
