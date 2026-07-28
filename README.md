@@ -40,7 +40,13 @@ Plataforma profissional de processamento de áudios em lote, transcrição autom
 
 ## 📖 MANUAIS DE INSTALAÇÃO POR SISTEMA OPERACIONAL
 
-Escolha o seu sistema operacional abaixo ou utilize a instalação simplificada com **Docker Compose**.
+Selecione o seu sistema operacional ou método de preferência para ver as instruções completas:
+
+📌 **Índice de Instalação Rápida:**
+- [🐳 Método Universal: Docker & Docker Compose (Recomendado)](#-método-universal-docker--docker-compose-macos--linux--windows)
+- [🪟 Guia Passo a Passo: Windows (Prompt / PowerShell)](#-guia-de-instalação---windows)
+- [🐧 Guia Passo a Passo: Linux (Ubuntu / Debian / Fedora)](#-guia-de-instalação---linux-ubuntu--debian--fedora)
+- [🍎 Guia Passo a Passo: macOS (Homebrew)](#-guia-de-instalação---macos)
 
 ---
 
