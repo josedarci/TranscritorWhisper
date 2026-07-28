@@ -42,6 +42,27 @@ logging.info("Carregando modelo Whisper 'base'...")
 model = whisper.load_model("base")
 logging.info("Modelo Whisper carregado.")
 
+def formatar_texto_paragrafos(texto):
+    """Organiza blocos contínuos de texto do Whisper em parágrafos legíveis com quebras de linha duplas."""
+    if not texto:
+        return ""
+    import re
+    frases = [f.strip() for f in re.split(r'(?<=[.!?])\s+', texto) if f.strip()]
+    if not frases:
+        return texto
+    
+    paragrafos = []
+    chunk = []
+    for frase in frases:
+        chunk.append(frase)
+        if len(chunk) >= 4:
+            paragrafos.append(" ".join(chunk))
+            chunk = []
+    if chunk:
+        paragrafos.append(" ".join(chunk))
+    
+    return "\n\n".join(paragrafos)
+
 def gerar_resumo_ollama(texto, modelo="llama3"):
     """Gera resumo via API local do Ollama em Português."""
     prompt = (
@@ -110,7 +131,8 @@ def processar_audio_item(audio_item, gerar_resumo=True, extrair_tags_entidades=T
         with whisper_lock:
             result = model.transcribe(caminho_destino, language="pt")
         info["tempo_transcricao"] = round(time.time() - t_trans_start, 2)
-        texto = result["text"].strip()
+        texto_raw = result["text"].strip()
+        texto = formatar_texto_paragrafos(texto_raw)
         info["transcricao"] = texto
 
         # 2. Resumo com IA
