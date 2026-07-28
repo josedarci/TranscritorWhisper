@@ -261,15 +261,29 @@ def carregar_dashboard_stats():
         res = requests.get(f"{API_BASE}/stats", timeout=5)
         if res.status_code == 200:
             st = res.json()
-            return (
-                f"### 📊 Estatísticas Gerais da Plataforma\n"
-                f"- **Total de Áudios Transcritos**: `{st.get('total_audios', 0)}`\n"
-                f"- **Horas Totais Transcritas**: `{st.get('total_horas', '0.00')} hrs`\n"
-                f"- **Total de Palavras Processadas**: `{st.get('total_palavras', 0):,}`\n"
-                f"- **Tempo Médio por Áudio**: `{st.get('tempo_medio_processamento', '0.00')}s`\n"
-                f"- **Total de Usuários Ativos**: `{st.get('total_usuarios', 1)}`"
-            )
+            total_audios = st.get('total_audios', 0)
+            total_horas = st.get('total_horas', '0.00')
+            
+            try:
+                total_palavras = int(st.get('total_palavras', 0) or 0)
+            except Exception:
+                total_palavras = 0
+                
+            tempo_medio = st.get('tempo_medio_processamento', '0.00')
+            total_usuarios = st.get('total_usuarios', 1)
+
+            return f"""### 📊 Dashboard & Indicadores Globais da Plataforma
+
+| 📈 Métrica | 🔢 Valor Acumulado |
+| :--- | :--- |
+| **Total de Áudios Transcritos** | `{total_audios}` áudios |
+| **Horas Totais Transcritas** | `{total_horas}` horas |
+| **Total de Palavras Processadas** | `{total_palavras:,}` palavras |
+| **Tempo Médio por Áudio** | `{tempo_medio}` segundos |
+| **Usuários Ativos no Sistema** | `{total_usuarios}` usuário |
+"""
     except Exception as e:
+        logging.error(f"Erro ao carregar dashboard: {e}")
         return f"⚠️ Não foi possível carregar métricas da API Node.js: {e}"
     return "Métricas indisponíveis."
 
@@ -580,7 +594,7 @@ with gr.Blocks(title="🎙️ Transcritor Inteligente v2.0 Enterprise", theme=gr
         with gr.TabItem("📊 Dashboard & Estatísticas"):
             gr.Markdown("### 📊 Indicadores Globais de Uso da Plataforma")
             btn_refresh_dash = gr.Button("🔄 Atualizar Métricas")
-            out_dash = gr.Markdown(value="Clique em 'Atualizar Métricas' para carregar as estatísticas.")
+            out_dash = gr.Markdown(value=carregar_dashboard_stats)
 
             btn_refresh_dash.click(fn=carregar_dashboard_stats, inputs=[], outputs=[out_dash])
 
