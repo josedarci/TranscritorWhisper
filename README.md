@@ -38,132 +38,199 @@ Plataforma profissional de processamento de áudios em lote, transcrição autom
 
 ---
 
-## 📖 MANUAL DE INSTALAÇÃO PASSO A PASSO
+## 📖 MANUAIS DE INSTALAÇÃO POR SISTEMA OPERACIONAL
 
-Você pode instalar o projeto de duas formas:
-1. **Via Docker & Docker Compose (Recomendado - Mais Fácil e Rápido)**
-2. **Instalação Nativa no Sistema Operacional (macOS / Linux / Windows)**
+Escolha o seu sistema operacional abaixo ou utilize a instalação simplificada com **Docker Compose**.
 
 ---
 
-### 🐳 OPÇÃO 1: Instalação e Uso com Docker & Docker Compose (RECOMENDADO)
+### 🐳 MÉTODO UNIVERSAL: Docker & Docker Compose (macOS / Linux / Windows)
 
-O uso com **Docker** elimina a necessidade de instalar MySQL, Node.js ou FFmpeg manualmente no seu sistema. Tudo roda de forma isolada e pré-configurada em contêineres.
+O uso com **Docker** é o método recomendado pois instala o banco de dados MySQL, Node.js, Python e FFmpeg isoladamente em contêineres sem sujar o sistema.
 
-#### 1. Pré-requisitos para Docker:
-- **Docker Desktop** (macOS ou Windows) ou **Docker Engine + Docker Compose** (Linux).
-- **Ollama** instalado e rodando na máquina host com o modelo `llama3` baixado:
+#### 1. Pré-requisitos:
+- Instalar o **Docker Desktop** (macOS/Windows) ou **Docker Engine + Docker Compose** (Linux).
+- Ter o **Ollama** instalado na máquina host com o modelo `llama3`:
   ```bash
   ollama run llama3
   ```
 
-#### 2. Configurar o Arquivo de Ambiente:
-Copie o arquivo `.env.example` para `.env`:
-```bash
-cp .env.example .env
-```
-
-#### 3. Subir a Plataforma com Docker Compose:
-No diretório raiz do projeto, execute:
-```bash
-docker compose up --build -d
-```
-*A opção `-d` roda os contêineres em segundo plano (detached mode).*
-
-#### 4. Verificar se os Serviços Estão Rodando:
-```bash
-docker compose ps
-```
-Você verá os contêineres:
-- `transcritor_mysql` (Porta 3306)
-- `transcritor_backend` (Porta 3001)
-- `transcritor_python` (Porta 7860)
-
-#### 5. Acessar a Aplicação:
-- **Interface Web (Gradio)**: `http://localhost:7860`
-- **API REST (Node.js)**: `http://localhost:3001`
+#### 2. Passo a Passo:
+1. Copie o arquivo de variáveis de ambiente:
+   ```bash
+   cp .env.example .env
+   ```
+2. Inicie os contêineres:
+   ```bash
+   docker compose up --build -d
+   ```
+3. Acessos:
+   - **Interface Web Gradio**: `http://localhost:7860`
+   - **API Backend Node.js**: `http://localhost:3001`
 
 #### 🛠️ Comandos Úteis do Docker:
-- **Ver logs em tempo real**:
-  ```bash
-  docker compose logs -f
-  ```
-- **Ver logs apenas da aplicação Python**:
-  ```bash
-  docker compose logs -f python-app
-  ```
-- **Parar os serviços sem apagar dados**:
-  ```bash
-  docker compose stop
-  ```
-- **Reiniciar a aplicação**:
-  ```bash
-  docker compose restart
-  ```
-- **Desligar e remover contêineres e volumes**:
-  ```bash
-  docker compose down -v
-  ```
+- **Ver logs em tempo real**: `docker compose logs -f`
+- **Parar contêineres**: `docker compose stop`
+- **Destruir contêineres e volumes**: `docker compose down -v`
 
 ---
 
-### 💻 OPÇÃO 2: Instalação Nativa no Sistema (macOS / Linux / Windows)
+### 🪟 GUIA DE INSTALAÇÃO — WINDOWS
 
-Caso prefira rodar os componentes diretamente no seu sistema operacional, siga a ordem abaixo:
+#### 1. Instalar o Python e Node.js
+- Baixe e instale o **Python 3.10+** em [python.org](https://www.python.org/). 
+  > ⚠️ **IMPORTANTE**: Na tela inicial de instalação, marque a caixa **"Add Python to PATH"**.
+- Baixe e instale o **Node.js LTS** em [nodejs.org](https://nodejs.org/).
 
-#### 1. Instalar o FFmpeg (Obrigatório para o Whisper decodificar áudios)
-- **macOS**:
-  ```bash
-  brew install ffmpeg
+#### 2. Instalar o FFmpeg no Windows
+Escolha um dos métodos abaixo no PowerShell como Administrador:
+- **Via Winget**:
+  ```powershell
+  winget install --id=Gyan.FFmpeg -e
   ```
-- **Linux (Ubuntu/Debian)**:
-  ```bash
-  sudo apt update && sudo apt install -y ffmpeg
+- **Via Chocolatey**:
+  ```powershell
+  choco install ffmpeg
   ```
-- **Windows**:
-  Instale via Chocolatey (`choco install ffmpeg`) ou baixe o executável oficial e adicione ao PATH do sistema.
+- *Ou baixe o binário no site oficial `gyan.dev/ffmpeg` e adicione a pasta `bin` às Variáveis de Ambiente do Sistema.*
 
-#### 2. Instalar e Iniciar o Ollama (Para Resumos e Tags com Llama 3)
-- **macOS / Linux**:
-  ```bash
-  brew install ollama
-  brew services start ollama
-  ollama run llama3
-  ```
-- **Windows**: Baixe o instalador em [ollama.com](https://ollama.com) e execute `ollama run llama3` no Prompt/PowerShell.
+#### 3. Instalar o Ollama no Windows
+1. Baixe o executável `OllamaSetup.exe` em [ollama.com](https://ollama.com/download/windows).
+2. Abra o Prompt de Comando ou PowerShell e baixe o modelo Llama 3:
+   ```cmd
+   ollama run llama3
+   ```
 
-#### 3. Configurar o Banco de Dados MySQL
-1. Abra o seu cliente MySQL e crie o banco de dados:
+#### 4. Instalar e Configurar o MySQL no Windows
+1. Baixe o **MySQL Installer** em [dev.mysql.com](https://dev.mysql.com/downloads/installer/).
+2. Abra o MySQL Workbench ou Command Line Client e crie o banco de dados:
+   ```sql
+   CREATE DATABASE joseda34_site DEFAULT CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
+   ```
+3. Importe a migration executando no Prompt:
+   ```cmd
+   mysql -u root -p joseda34_site < database\migration_v2.sql
+   ```
+
+#### 5. Executar o Projeto no Windows
+1. Copie `.env.example` para `.env`:
+   ```cmd
+   copy .env.example .env
+   ```
+2. Inicie a API Node.js:
+   ```cmd
+   cd transcritor-whisper\backend
+   npm install
+   node server.js
+   ```
+3. Em outra janela do Prompt/PowerShell, na raiz do projeto:
+   ```cmd
+   pip install -r transcritor-whisper\requirements.txt
+   pip install openai-whisper gradio requests
+   python app.py
+   ```
+4. Acesse no navegador: `http://127.0.0.1:7860`
+
+---
+
+### 🐧 GUIA DE INSTALAÇÃO — LINUX (Ubuntu / Debian / Fedora)
+
+#### 1. Instalar as Dependências do Sistema e FFmpeg
+No Ubuntu/Debian:
+```bash
+sudo apt update && sudo apt install -y ffmpeg python3-pip python3-venv git curl mysql-server nodejs npm
+```
+No Fedora:
+```bash
+sudo dnf install -y ffmpeg python3-pip git curl community-mysql-server nodejs
+```
+
+#### 2. Instalar e Configurar o Ollama
+1. Execute o script oficial de instalação do Ollama:
+   ```bash
+   curl -fsSL https://ollama.com/install.sh | sh
+   ```
+2. Inicie o serviço do Ollama:
+   ```bash
+   sudo systemctl enable --now ollama
+   ```
+3. Baixe o modelo Llama 3:
+   ```bash
+   ollama run llama3
+   ```
+
+#### 3. Configurar o MySQL no Linux
+1. Abra o prompt do MySQL:
+   ```bash
+   sudo mysql -u root
+   ```
+2. Crie o banco e usuário:
    ```sql
    CREATE DATABASE IF NOT EXISTS joseda34_site DEFAULT CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
+   CREATE USER IF NOT EXISTS 'joseda34_dev'@'localhost' IDENTIFIED BY 'REDACTED_PASSWORD';
+   GRANT ALL PRIVILEGES ON joseda34_site.* TO 'joseda34_dev'@'localhost';
+   FLUSH PRIVILEGES;
    ```
-2. Aplique o script de migration v2:
+3. Aplique a migration v2:
    ```bash
-   mysql -u seu_usuario -p joseda34_site < database/migration_v2.sql
+   mysql -u joseda34_dev -p joseda34_site < database/migration_v2.sql
    ```
 
-#### 4. Configurar as Variáveis de Ambiente
-Copie `.env.example` para `.env` e ajuste as credenciais do seu MySQL local:
+#### 4. Executar o Projeto no Linux
+1. Copie o arquivo `.env`:
+   ```bash
+   cp .env.example .env
+   ```
+2. Inicie a API Node.js:
+   ```bash
+   cd transcritor-whisper/backend
+   npm install
+   node server.js
+   ```
+3. Em outro terminal, crie o ambiente virtual Python e inicie o app:
+   ```bash
+   python3 -m venv venv
+   source venv/bin/activate
+   pip install -r transcritor-whisper/requirements.txt
+   pip install openai-whisper gradio requests
+   python3 app.py
+   ```
+4. Acesse no navegador: `http://127.0.0.1:7860`
+
+---
+
+### 🍎 GUIA DE INSTALAÇÃO — macOS
+
+#### 1. Instalar Dependências via Homebrew
 ```bash
-cp .env.example .env
+brew install ffmpeg node mysql ollama
 ```
 
-#### 5. Iniciar o Backend Node.js API
+#### 2. Iniciar Serviços e Modelo Ollama
 ```bash
-cd transcritor-whisper/backend
-npm install
-node server.js
+brew services start mysql
+brew services start ollama
+ollama run llama3
 ```
-*A API estará pronta em `http://localhost:3001`.*
 
-#### 6. Iniciar a Aplicação Python Gradio
-Em outro terminal, no diretório raiz do projeto:
-```bash
-pip install -r transcritor-whisper/requirements.txt
-pip install openai-whisper gradio requests
-python3 app.py
-```
-*A interface web abrirá em **`http://127.0.0.1:7860`**.*
+#### 3. Executar o Projeto no macOS
+1. Aplicar a migration no MySQL:
+   ```bash
+   mysql -u root -p joseda34_site < database/migration_v2.sql
+   ```
+2. Iniciar a API Node.js:
+   ```bash
+   cd transcritor-whisper/backend
+   npm install
+   node server.js
+   ```
+3. Em outro terminal na raiz do projeto:
+   ```bash
+   pip3 install -r transcritor-whisper/requirements.txt
+   pip3 install openai-whisper gradio requests
+   python3 app.py
+   ```
+4. Acesse no navegador: `http://127.0.0.1:7860`
 
 ---
 
@@ -182,19 +249,16 @@ python3 app.py
 ## ❓ Troubleshooting / Solução de Problemas Comuns
 
 ### 1. `dyld: Library not loaded / libx265.dylib` (macOS)
-Isso acontece se o Homebrew atualizar bibliotecas do sistema e quebrar os links dinâmicos do FFmpeg antigo.
-**Solução**:
+**Solução**: Reinstale o ffmpeg para recalibrar as bibliotecas do Homebrew:
 ```bash
 brew reinstall ffmpeg
 ```
 
-### 2. `RuntimeError: cannot reshape tensor of 0 elements`
-Isso ocorria quando múltiplas threads tentavam acessar a inferência do Whisper simultaneamente. 
-**Solução**: Já foi corrigido na versão v2.0 através da inclusão de um `threading.Lock()` em `app.py`.
+### 2. `FFmpeg not found / command not found` (Windows / Linux)
+**Solução**: Certifique-se de que o executável `ffmpeg` está no PATH do sistema. No Windows, reinicie a janela do PowerShell após instalar.
 
-### 3. `Connection Refused: http://localhost:11434`
-Significa que o servidor do Ollama não está ativo no seu computador.
-**Solução**: Inicie o Ollama com `ollama serve` ou `brew services start ollama`.
+### 3. `RuntimeError: cannot reshape tensor of 0 elements`
+**Solução**: Já corrigido na v2.0 com `threading.Lock()` para garantir thread-safety do PyTorch.
 
 ---
 
