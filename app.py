@@ -627,7 +627,7 @@ with gr.Blocks(title="🎙️ Transcritor Inteligente v2.0 Enterprise", theme=gr
             gr.Markdown("### 📁 Acervo Geral de Transcrições & Gestão do Banco de Dados")
             
             with gr.Row():
-                input_filtro_acervo = gr.Textbox(label="Filtrar por nome ou palavra-chave", placeholder="Ex: Bradesco, 250704...", scale=3)
+                input_filtro_acervo = gr.Textbox(label="Filtrar por nome ou palavra-chave", placeholder="Ex: Empresa XYZ, 250704...", scale=3)
                 btn_refresh_acervo = gr.Button("🔄 Atualizar / Filtrar Acervo", variant="secondary", scale=1)
 
             grid_acervo = gr.Dataframe(
