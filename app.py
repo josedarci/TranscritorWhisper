@@ -449,12 +449,47 @@ def excluir_registro_acervo(id_ou_nome):
         return f"Erro ao excluir: {e}", carregar_acervo_grid()
     return f"Não foi possível excluir o registro #{termo}.", carregar_acervo_grid()
 
+def obter_lista_choices_acervo():
+    """Gera a lista de arquivos formatada '[ID] nome_arquivo' para o Dropdown."""
+    try:
+        res = requests.get(f"{API_BASE}/transcricoes", params={"limit": 100}, timeout=5)
+        if res.status_code == 200:
+            dados = res.json().get("dados", [])
+            return [f"[{item['id']}] {item['nome_arquivo']}" for item in dados]
+    except Exception:
+        pass
+    return []
+
+def ao_selecionar_dropdown_acervo(opcao):
+    """Executado automaticamente ao selecionar um item no Dropdown de arquivos."""
+    if not opcao:
+        return "", "*Selecione um arquivo no menu acima para visualizar.*"
+    import re
+    match = re.search(r'\[(\d+)\]', str(opcao))
+    if match:
+        id_str = match.group(1)
+        return id_str, abrir_modal_detalhes(id_str)
+    return str(opcao), abrir_modal_detalhes(opcao)
+
 def ao_selecionar_linha_grid(evt: gr.SelectData):
     """Disparado automaticamente ao clicar em qualquer célula ou linha da Grid do Acervo."""
-    if evt and evt.row_value:
-        id_selecionado = evt.row_value[0]
-        conteudo_md = abrir_modal_detalhes(id_selecionado)
-        return str(id_selecionado), conteudo_md
+    if evt:
+        # 1. Se evt.index for um par (row, col)
+        if evt.index is not None:
+            try:
+                row_idx = evt.index[0] if isinstance(evt.index, (list, tuple)) else int(evt.index)
+                df = carregar_acervo_grid()
+                if not df.empty and row_idx < len(df):
+                    id_row = str(df.iloc[row_idx]["ID"])
+                    return id_row, abrir_modal_detalhes(id_row)
+            except Exception as ex:
+                logging.warning(f"Erro ao selecionar linha da grid por index: {ex}")
+        
+        # 2. Fallback pelo valor direto da celula
+        val = str(evt.value).strip() if evt.value else ""
+        if val:
+            return val, abrir_modal_detalhes(val)
+
     return "", "*Clique em uma linha da grid acima para visualizar a transcrição formatada.*"
 
 # Interface Gradio Profissional (Fases 1 a 4)
@@ -492,15 +527,15 @@ with gr.Blocks(title="🎙️ Transcritor Inteligente v2.0 Enterprise", theme=gr
             gr.Markdown("### 📁 Acervo Geral de Transcrições & Gestão do Banco de Dados")
             
             with gr.Row():
-                input_filtro_acervo = gr.Textbox(label="Filtrar por nome ou palavra-chave", placeholder="Ex: Bradesco, 250704...")
-                btn_refresh_acervo = gr.Button("🔄 Atualizar / Filtrar Acervo", variant="secondary")
+                input_filtro_acervo = gr.Textbox(label="Filtrar por nome ou palavra-chave", placeholder="Ex: Bradesco, 250704...", scale=3)
+                btn_refresh_acervo = gr.Button("🔄 Atualizar / Filtrar Acervo", variant="secondary", scale=1)
 
             grid_acervo = gr.Dataframe(
                 value=carregar_acervo_grid,
                 headers=["ID", "Nome do Arquivo", "Data Upload", "Duração", "Palavras", "Status", "Transcrição Disponível?"],
                 datatype=["number", "str", "str", "str", "str", "str", "str"],
                 col_count=(7, "fixed"),
-                label="📊 Lista de Áudios e Metadados do Banco de Dados (MySQL)",
+                label="📊 Lista de Áudios e Metadados do Banco de Dados (MySQL) - Clique em qualquer linha para abrir!",
                 interactive=False
             )
 
@@ -508,15 +543,24 @@ with gr.Blocks(title="🎙️ Transcritor Inteligente v2.0 Enterprise", theme=gr
             gr.Markdown("### 👁️ Inspeção Detalhada da Transcrição Selecionada")
 
             with gr.Row():
-                input_id_selecionado = gr.Textbox(label="Digite o ID ou Nome do Arquivo da Grid", placeholder="Ex: 1 ou 250704_001.mp3", scale=2)
-                btn_abrir_modal = gr.Button("👁️ Visualizar Transcrição Formatada", variant="primary", scale=1)
+                dropdown_selecao = gr.Dropdown(
+                    choices=obter_lista_choices_acervo(),
+                    label="⚡ Seleção Rápida por Menu Dropdown (Escolha qualquer arquivo)",
+                    value=None,
+                    scale=2
+                )
+                input_id_selecionado = gr.Textbox(label="ID / Arquivo Selecionado", placeholder="Ex: 36 ou 250704_001.mp3", scale=1)
+
+            with gr.Row():
+                btn_abrir_modal = gr.Button("👁️ Visualizar Transcrição Formatada", variant="primary", scale=2)
                 btn_excluir_acervo = gr.Button("🗑️ Excluir Registro", variant="stop", scale=1)
 
             out_status_acervo = gr.Textbox(label="Status da Ação", visible=False)
             
             with gr.Accordion("📄 Visualizador de Transcrição Formatada & Metadados", open=True):
-                out_modal_conteudo = gr.Markdown(value="*Clique em qualquer linha da grid acima para carregar e abrir a transcrição formatada automaticamente.*")
+                out_modal_conteudo = gr.Markdown(value="*Selecione um arquivo no Dropdown ou clique em qualquer linha da grid para carregar a transcrição formatada automaticamente.*")
 
+            dropdown_selecao.change(fn=ao_selecionar_dropdown_acervo, inputs=[dropdown_selecao], outputs=[input_id_selecionado, out_modal_conteudo])
             grid_acervo.select(fn=ao_selecionar_linha_grid, inputs=[], outputs=[input_id_selecionado, out_modal_conteudo])
             btn_refresh_acervo.click(fn=carregar_acervo_grid, inputs=[input_filtro_acervo], outputs=[grid_acervo])
             btn_abrir_modal.click(fn=abrir_modal_detalhes, inputs=[input_id_selecionado], outputs=[out_modal_conteudo])
