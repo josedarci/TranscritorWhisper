@@ -484,6 +484,7 @@ with gr.Blocks(title="🎙️ Transcritor Inteligente v2.0 Enterprise", theme=gr
                 btn_refresh_acervo = gr.Button("🔄 Atualizar / Filtrar Acervo", variant="secondary")
 
             grid_acervo = gr.Dataframe(
+                value=carregar_acervo_grid,
                 headers=["ID", "Nome do Arquivo", "Data Upload", "Duração", "Palavras", "Status", "Transcrição Disponível?"],
                 datatype=["number", "str", "str", "str", "str", "str", "str"],
                 col_count=(7, "fixed"),
