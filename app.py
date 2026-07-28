@@ -9,6 +9,7 @@ import hashlib
 import threading
 import concurrent.futures
 import whisper
+import pandas as pd
 import gradio as gr
 
 # Lock para garantir thread safety nas chamadas concorrentes ao PyTorch/Whisper
@@ -341,7 +342,8 @@ def gerar_exportacao(nome_arquivo, tipo_formato):
     return f"Transcrição para '{nome_limpo}' não foi localizada no banco de dados.", None
 
 def carregar_acervo_grid(filtro=""):
-    """Carrega todos os registros do MySQL formatados para a Grid do Acervo."""
+    """Carrega todos os registros do MySQL formatados como DataFrame para a Grid do Acervo."""
+    cols = ["ID", "Nome do Arquivo", "Data Upload", "Duração", "Palavras", "Status", "Transcrição Disponível?"]
     try:
         params = {"limit": 100}
         if filtro and str(filtro).strip():
@@ -355,19 +357,20 @@ def carregar_acervo_grid(filtro=""):
                 palavras = item.get("quantidade_palavras", 0)
                 tem_transcricao = "✅ Sim" if item.get("texto") and len(item["texto"]) > 10 else "❌ Não"
                 data_up = str(item.get("data_upload", "N/A"))[:19].replace("T", " ")
-                grid_data.append([
-                    item.get("id"),
-                    item.get("nome_arquivo"),
-                    data_up,
-                    duracao,
-                    f"{palavras:,}",
-                    item.get("status", "Concluído"),
-                    tem_transcricao
-                ])
-            return grid_data
+                grid_data.append({
+                    "ID": item.get("id"),
+                    "Nome do Arquivo": item.get("nome_arquivo"),
+                    "Data Upload": data_up,
+                    "Duração": duracao,
+                    "Palavras": f"{palavras:,}",
+                    "Status": item.get("status", "Concluído"),
+                    "Transcrição Disponível?": tem_transcricao
+                })
+            if grid_data:
+                return pd.DataFrame(grid_data)
     except Exception as e:
         logging.error(f"Erro ao carregar acervo: {e}")
-    return []
+    return pd.DataFrame(columns=cols)
 
 def abrir_modal_detalhes(id_ou_nome):
     """Exibe os detalhes formatados da transcrição selecionada."""
