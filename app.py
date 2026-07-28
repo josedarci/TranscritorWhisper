@@ -449,6 +449,14 @@ def excluir_registro_acervo(id_ou_nome):
         return f"Erro ao excluir: {e}", carregar_acervo_grid()
     return f"Não foi possível excluir o registro #{termo}.", carregar_acervo_grid()
 
+def ao_selecionar_linha_grid(evt: gr.SelectData):
+    """Disparado automaticamente ao clicar em qualquer célula ou linha da Grid do Acervo."""
+    if evt and evt.row_value:
+        id_selecionado = evt.row_value[0]
+        conteudo_md = abrir_modal_detalhes(id_selecionado)
+        return str(id_selecionado), conteudo_md
+    return "", "*Clique em uma linha da grid acima para visualizar a transcrição formatada.*"
+
 # Interface Gradio Profissional (Fases 1 a 4)
 with gr.Blocks(title="🎙️ Transcritor Inteligente v2.0 Enterprise", theme=gr.themes.Soft()) as demo:
     gr.Markdown("# 🎙️ Transcritor Inteligente v2.0 Enterprise")
@@ -507,8 +515,9 @@ with gr.Blocks(title="🎙️ Transcritor Inteligente v2.0 Enterprise", theme=gr
             out_status_acervo = gr.Textbox(label="Status da Ação", visible=False)
             
             with gr.Accordion("📄 Visualizador de Transcrição Formatada & Metadados", open=True):
-                out_modal_conteudo = gr.Markdown(value="*Selecione ou digite um arquivo da grid acima e clique em 'Visualizar Transcrição Formatada'.*")
+                out_modal_conteudo = gr.Markdown(value="*Clique em qualquer linha da grid acima para carregar e abrir a transcrição formatada automaticamente.*")
 
+            grid_acervo.select(fn=ao_selecionar_linha_grid, inputs=[], outputs=[input_id_selecionado, out_modal_conteudo])
             btn_refresh_acervo.click(fn=carregar_acervo_grid, inputs=[input_filtro_acervo], outputs=[grid_acervo])
             btn_abrir_modal.click(fn=abrir_modal_detalhes, inputs=[input_id_selecionado], outputs=[out_modal_conteudo])
             btn_excluir_acervo.click(fn=excluir_registro_acervo, inputs=[input_id_selecionado], outputs=[out_status_acervo, grid_acervo])
