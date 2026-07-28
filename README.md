@@ -33,60 +33,137 @@ Plataforma profissional de processamento de áudios em lote, transcrição autom
                                   ▼
                       ┌──────────────────────┐
                       │  MySQL Database v2   │
-                      └──────────────────────┘
+                      └───────────┬──────────┘
 ```
 
 ---
 
-## 🚀 Novas Funcionalidades Implementadas
+## 📖 MANUAL DE INSTALAÇÃO PASSO A PASSO
 
-### 🎙️ 1. Processamento Paralelo & Progresso em Tempo Real
-- **Concorrência com ThreadPoolExecutor**: Processamento simultâneo de múltiplos arquivos de áudio com controle configurável de workers (1 a 8 simultâneos).
-- **Rastreamento de Estados**: Progresso percentual visual no Gradio com status individual por arquivo (`Aguardando`, `Transcrevendo`, `Gerando Resumo`, `Salvando`, `Concluído`, `Erro`).
-- **Isolamento de Falhas**: Erros em um arquivo não interrompem o processamento dos demais.
-- **Relatório de Desempenho**: Exibição do tempo total do lote, tempo médio por arquivo e métricas detalhadas.
-
-### 🧠 2. Inteligência Artificial Avançada & Extração Semântica
-- **Resumos em Português do Brasil**: Geração automática de resumos concisos e estruturados em tópicos via Ollama (Llama 3).
-- **Tags Automáticas**: Identificação de categorias, temas centrais, área de negócio e nível de prioridade.
-- **Extração de Entidades**: Extração em JSON de Pessoas, Empresas, Datas, Valores, E-mails e Telefones citados nos áudios.
-
-### 💬 3. Chat RAG & Busca Semântica
-- **Chat com a Transcrição (RAG)**: Faça perguntas sobre o conteúdo de um áudio específico. A IA responde fundamentando-se estritamente na transcrição.
-- **Busca Semântica (VectorStore)**: Busca conceitual por similaridade de cosseno ("Encontre reuniões sobre custos ou Azure").
-
-### 📊 4. Dashboard de Métricas & Histórico
-- **Painel de Indicadores Globais**: Visualização de horas acumuladas, total de palavras processadas, tempo médio de execução e total de usuários.
-- **Histórico & Pesquisa Híbrida**: Consulta por palavra-chave no banco MySQL combinada com busca vetorial.
-
-### 📥 5. Exportação Multi-formato
-- **Formatos Suportados**: Exportação instantânea de relatórios completos nos formatos **TXT**, **Markdown (.md)** e **HTML estilizado**.
+Você pode instalar o projeto de duas formas:
+1. **Via Docker & Docker Compose (Recomendado - Mais Fácil e Rápido)**
+2. **Instalação Nativa no Sistema Operacional (macOS / Linux / Windows)**
 
 ---
 
-## 📂 Estrutura do Projeto
+### 🐳 OPÇÃO 1: Instalação e Uso com Docker & Docker Compose (RECOMENDADO)
 
-```text
-Transcritor/
-├── app.py                      # Aplicação Principal Gradio Web UI (Python)
-├── services/
-│   ├── ai_extractor.py          # Serviço de Tags e Extração de Entidades via Ollama
-│   ├── vector_store.py          # Banco Vetorial e Engine de RAG/Busca Semântica
-│   └── exporter.py              # Exportador nos formatos TXT, Markdown e HTML
-├── database/
-│   └── migration_v2.sql         # Script SQL de Expansão da Tabela transcricoes
-├── transcritor-whisper/
-│   └── backend/
-│       ├── server.js            # API REST Node.js + Express
-│       ├── package.json         # Dependências do Backend Node
-│       └── Dockerfile           # Dockerfile do Backend Node
-├── tests/
-│   └── test_transcritor.py      # Suíte de Testes Unitários (unittest)
-├── .env / .env.example          # Configurações Centralizadas de Ambiente
-├── docker-compose.yml           # Orquestração Completa de Contêineres
-├── Dockerfile                   # Dockerfile da Aplicação Python
-└── README.md                    # Documentação Técnica Oficial
+O uso com **Docker** elimina a necessidade de instalar MySQL, Node.js ou FFmpeg manualmente no seu sistema. Tudo roda de forma isolada e pré-configurada em contêineres.
+
+#### 1. Pré-requisitos para Docker:
+- **Docker Desktop** (macOS ou Windows) ou **Docker Engine + Docker Compose** (Linux).
+- **Ollama** instalado e rodando na máquina host com o modelo `llama3` baixado:
+  ```bash
+  ollama run llama3
+  ```
+
+#### 2. Configurar o Arquivo de Ambiente:
+Copie o arquivo `.env.example` para `.env`:
+```bash
+cp .env.example .env
 ```
+
+#### 3. Subir a Plataforma com Docker Compose:
+No diretório raiz do projeto, execute:
+```bash
+docker compose up --build -d
+```
+*A opção `-d` roda os contêineres em segundo plano (detached mode).*
+
+#### 4. Verificar se os Serviços Estão Rodando:
+```bash
+docker compose ps
+```
+Você verá os contêineres:
+- `transcritor_mysql` (Porta 3306)
+- `transcritor_backend` (Porta 3001)
+- `transcritor_python` (Porta 7860)
+
+#### 5. Acessar a Aplicação:
+- **Interface Web (Gradio)**: `http://localhost:7860`
+- **API REST (Node.js)**: `http://localhost:3001`
+
+#### 🛠️ Comandos Úteis do Docker:
+- **Ver logs em tempo real**:
+  ```bash
+  docker compose logs -f
+  ```
+- **Ver logs apenas da aplicação Python**:
+  ```bash
+  docker compose logs -f python-app
+  ```
+- **Parar os serviços sem apagar dados**:
+  ```bash
+  docker compose stop
+  ```
+- **Reiniciar a aplicação**:
+  ```bash
+  docker compose restart
+  ```
+- **Desligar e remover contêineres e volumes**:
+  ```bash
+  docker compose down -v
+  ```
+
+---
+
+### 💻 OPÇÃO 2: Instalação Nativa no Sistema (macOS / Linux / Windows)
+
+Caso prefira rodar os componentes diretamente no seu sistema operacional, siga a ordem abaixo:
+
+#### 1. Instalar o FFmpeg (Obrigatório para o Whisper decodificar áudios)
+- **macOS**:
+  ```bash
+  brew install ffmpeg
+  ```
+- **Linux (Ubuntu/Debian)**:
+  ```bash
+  sudo apt update && sudo apt install -y ffmpeg
+  ```
+- **Windows**:
+  Instale via Chocolatey (`choco install ffmpeg`) ou baixe o executável oficial e adicione ao PATH do sistema.
+
+#### 2. Instalar e Iniciar o Ollama (Para Resumos e Tags com Llama 3)
+- **macOS / Linux**:
+  ```bash
+  brew install ollama
+  brew services start ollama
+  ollama run llama3
+  ```
+- **Windows**: Baixe o instalador em [ollama.com](https://ollama.com) e execute `ollama run llama3` no Prompt/PowerShell.
+
+#### 3. Configurar o Banco de Dados MySQL
+1. Abra o seu cliente MySQL e crie o banco de dados:
+   ```sql
+   CREATE DATABASE IF NOT EXISTS joseda34_site DEFAULT CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
+   ```
+2. Aplique o script de migration v2:
+   ```bash
+   mysql -u seu_usuario -p joseda34_site < database/migration_v2.sql
+   ```
+
+#### 4. Configurar as Variáveis de Ambiente
+Copie `.env.example` para `.env` e ajuste as credenciais do seu MySQL local:
+```bash
+cp .env.example .env
+```
+
+#### 5. Iniciar o Backend Node.js API
+```bash
+cd transcritor-whisper/backend
+npm install
+node server.js
+```
+*A API estará pronta em `http://localhost:3001`.*
+
+#### 6. Iniciar a Aplicação Python Gradio
+Em outro terminal, no diretório raiz do projeto:
+```bash
+pip install -r transcritor-whisper/requirements.txt
+pip install openai-whisper gradio requests
+python3 app.py
+```
+*A interface web abrirá em **`http://127.0.0.1:7860`**.*
 
 ---
 
@@ -102,48 +179,28 @@ Transcritor/
 
 ---
 
-## 🗄️ Estrutura da Tabela MySQL (`transcricoes`)
+## ❓ Troubleshooting / Solução de Problemas Comuns
 
-Campos presentes na versão v2 (`database/migration_v2.sql`):
-- `id`, `nome_arquivo`, `url`, `caminho`, `tamanho_bytes`, `duracao_segundos`, `idioma`, `modelo_whisper`, `modelo_llama`, `tempo_transcricao`, `tempo_resumo`, `tempo_total`, `status`, `texto`, `resumo`, `quantidade_palavras`, `quantidade_caracteres`, `data_upload`, `data_processamento`, `hash_sha256`, `usuario`, `tags` (JSON), `entidades` (JSON), `criado_em`.
-
----
-
-## ⚙️ Instalação e Execução
-
-### 1. Aplicar a Migration no MySQL
+### 1. `dyld: Library not loaded / libx265.dylib` (macOS)
+Isso acontece se o Homebrew atualizar bibliotecas do sistema e quebrar os links dinâmicos do FFmpeg antigo.
+**Solução**:
 ```bash
-mysql -u root -p joseda34_site < database/migration_v2.sql
+brew reinstall ffmpeg
 ```
 
-### 2. Iniciar o Backend Node.js
-```bash
-cd transcritor-whisper/backend
-npm install
-node server.js
-```
+### 2. `RuntimeError: cannot reshape tensor of 0 elements`
+Isso ocorria quando múltiplas threads tentavam acessar a inferência do Whisper simultaneamente. 
+**Solução**: Já foi corrigido na versão v2.0 através da inclusão de um `threading.Lock()` em `app.py`.
 
-### 3. Iniciar a Aplicação Python Gradio
-No diretório raiz:
-```bash
-python3 app.py
-```
-Acesse no navegador: **[http://127.0.0.1:7860](http://127.0.0.1:7860)**
-
----
-
-## 🐳 Execução via Docker Compose
-
-Para subir o ambiente containerizado completo (MySQL + Node API + Python App):
-```bash
-docker compose up --build -d
-```
+### 3. `Connection Refused: http://localhost:11434`
+Significa que o servidor do Ollama não está ativo no seu computador.
+**Solução**: Inicie o Ollama com `ollama serve` ou `brew services start ollama`.
 
 ---
 
 ## 🧪 Suíte de Testes Unitários
 
-Para rodar os testes unitários automatizados:
+Para rodar a suíte de testes unitários automatizados:
 ```bash
 python3 -m unittest discover -s tests
 ```
