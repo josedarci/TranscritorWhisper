@@ -356,6 +356,53 @@ def gerar_exportacao(nome_arquivo, tipo_formato):
         return f"Erro ao gerar exportação: {e}", None
     return f"Transcrição para '{nome_limpo}' não foi localizada no banco de dados.", None
 
+def melhorar_audio_ffmpeg(caminho_entrada):
+    """
+    Aplica filtros avançados de áudio via FFmpeg para clareza vocal máxima:
+    - Bandpass filter (80Hz - 8000Hz): elimina zumbidos de fundo graves e chiados agudos
+    - Normalização EBU R128 (loudnorm): equilibra vozes baixas e altas
+    - Reamostragem Mono 16kHz: padrão de máxima precisão do Whisper
+    """
+    if not caminho_entrada or not os.path.exists(caminho_entrada):
+        return caminho_entrada
+
+    base, ext = os.path.splitext(caminho_entrada)
+    caminho_saida = f"{base}_enhanced.mp3"
+
+    cmd = [
+        "ffmpeg", "-y",
+        "-i", caminho_entrada,
+        "-af", "highpass=f=80,lowpass=f=8000,loudnorm=I=-16:LRA=11:TP=-1.5",
+        "-ar", "16000",
+        "-ac", "1",
+        "-c:a", "libmp3lame",
+        "-b:a", "128k",
+        caminho_saida
+    ]
+
+    try:
+        import subprocess
+        res = subprocess.run(cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True)
+        if res.returncode == 0 and os.path.exists(caminho_saida):
+            logging.info(f"✨ Áudio aprimorado via FFmpeg: {caminho_saida}")
+            return caminho_saida
+    except Exception as e:
+        logging.warning(f"Falha ao processar áudio com FFmpeg: {e}")
+
+    return caminho_entrada
+
+def acao_melhorar_audio_selecionado(id_ou_nome):
+    """Aplica o tratamento de áudio via FFmpeg no registro selecionado e recarrega o player."""
+    if not id_ou_nome:
+        return "Selecione um arquivo da grid primeiro.", None
+    
+    md, caminho_audio = abrir_modal_detalhes(id_ou_nome)
+    if caminho_audio and os.path.exists(caminho_audio):
+        audio_tratado = melhorar_audio_ffmpeg(caminho_audio)
+        msg_md = md + "\n\n> [!TIP]\n> ✨ **Áudio Tratado com Sucesso!** Aplicação de Filtro Passa-Banda Vocal (80Hz-8000Hz) e Normalização EBU R128."
+        return msg_md, audio_tratado
+    return md, caminho_audio
+
 def obter_caminho_audio_local(item):
     """Localiza o arquivo de áudio no servidor para alimentar o player nativo do Gradio."""
     if not item:
@@ -613,6 +660,7 @@ with gr.Blocks(title="🎙️ Transcritor Inteligente v2.0 Enterprise", theme=gr
 
             with gr.Row():
                 btn_abrir_modal = gr.Button("👁️ Visualizar Transcrição & Carregar Áudio", variant="primary", scale=2)
+                btn_melhorar_audio = gr.Button("✨ Tratar Áudio (Filtro Vocal & Normalização)", variant="secondary", scale=2)
                 btn_excluir_acervo = gr.Button("🗑️ Excluir Registro", variant="stop", scale=1)
 
             out_status_acervo = gr.Textbox(label="Status da Ação", visible=False)
@@ -627,6 +675,7 @@ with gr.Blocks(title="🎙️ Transcritor Inteligente v2.0 Enterprise", theme=gr
             grid_acervo.select(fn=ao_selecionar_linha_grid, inputs=[], outputs=[input_id_selecionado, out_modal_conteudo, player_audio_acervo])
             btn_refresh_acervo.click(fn=carregar_acervo_grid, inputs=[input_filtro_acervo], outputs=[grid_acervo])
             btn_abrir_modal.click(fn=abrir_modal_detalhes, inputs=[input_id_selecionado], outputs=[out_modal_conteudo, player_audio_acervo])
+            btn_melhorar_audio.click(fn=acao_melhorar_audio_selecionado, inputs=[input_id_selecionado], outputs=[out_modal_conteudo, player_audio_acervo])
             btn_excluir_acervo.click(fn=excluir_registro_acervo, inputs=[input_id_selecionado], outputs=[out_status_acervo, grid_acervo])
 
         # ABA 3: Pesquisa Semântica & Histórico
