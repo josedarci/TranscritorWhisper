@@ -606,4 +606,4 @@ with gr.Blocks(title="🎙️ Transcritor Inteligente v2.0 Enterprise", theme=gr
 
             btn_export.click(fn=gerar_exportacao, inputs=[input_nome_exp, radio_formato], outputs=[out_export, out_file_pdf])
 
-demo.launch()
+demo.launch(server_name="127.0.0.1", server_port=7860)
