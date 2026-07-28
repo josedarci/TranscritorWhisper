@@ -661,6 +661,10 @@ python3 -m unittest discover -s tests
 ## 🗺️ Roadmap do Projeto (Open Source)
 
 - [x] ⚡ **Processamento paralelo e em fila de múltiplos áudios** (`ThreadPoolExecutor` com 1 a 8 workers)
+- [x] 🎧 **Player de Mídia Integrado** (Play, Pausa, Scrubbing, Controle de Velocidade e Sincronização 1:1 com o Áudio)
+- [x] ✨ **Motor de Tratamento e Aprimoramento de Áudio via FFmpeg** (Filtro passa-banda vocal 80Hz-8000Hz e Normalização EBU R128)
+- [x] 📅 **Padronização Internacional de Datas em Português** (`DD/MM/YYYY HH:MM` em Grids, Modais e PDFs)
+- [x] ⚡ **Seleção Dinâmica via Menus Dropdown / Combobox** para Chat RAG, Inspeção e Exportação
 - [x] 🔍 **Busca semântica e Chat RAG** para consulta de transcrições por inteligência artificial
 - [x] 🏷️ **Extração automática de entidades (NER)** (Pessoas, Empresas, Datas, Valores e Emails em JSON)
 - [x] 📊 **Dashboard com métricas executivas** e **exportação em múltiplos formatos** (TXT, Markdown, HTML)
