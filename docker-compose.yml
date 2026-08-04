@@ -6,10 +6,10 @@ services:
     container_name: transcritor_mysql
     restart: always
     environment:
-      MYSQL_ROOT_PASSWORD: ${DB_PASSWORD:-REDACTED_PASSWORD}
-      MYSQL_DATABASE: ${DB_NAME:-joseda34_site}
-      MYSQL_USER: ${DB_USER:-joseda34_dev}
-      MYSQL_PASSWORD: ${DB_PASSWORD:-REDACTED_PASSWORD}
+      MYSQL_ROOT_PASSWORD: ${DB_PASSWORD}
+      MYSQL_DATABASE: ${DB_NAME:-transcritor_db}
+      MYSQL_USER: ${DB_USER:-transcritor_user}
+      MYSQL_PASSWORD: ${DB_PASSWORD}
     ports:
       - "${DB_PORT:-3306}:3306"
     volumes:
@@ -27,9 +27,9 @@ services:
     environment:
       NODE_PORT: 3001
       DB_HOST: mysql-db
-      DB_USER: ${DB_USER:-joseda34_dev}
-      DB_PASSWORD: ${DB_PASSWORD:-REDACTED_PASSWORD}
-      DB_NAME: ${DB_NAME:-joseda34_site}
+      DB_USER: ${DB_USER:-transcritor_user}
+      DB_PASSWORD: ${DB_PASSWORD}
+      DB_NAME: ${DB_NAME:-transcritor_db}
     ports:
       - "3001:3001"
     depends_on:

@@ -563,7 +563,7 @@ sudo dnf install -y ffmpeg python3-pip git curl community-mysql-server nodejs
 2. Crie o banco e usuário:
    ```sql
    CREATE DATABASE IF NOT EXISTS joseda34_site DEFAULT CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
-   CREATE USER IF NOT EXISTS 'joseda34_dev'@'localhost' IDENTIFIED BY 'REDACTED_PASSWORD';
+   CREATE USER IF NOT EXISTS 'joseda34_dev'@'localhost' IDENTIFIED BY 'sua_senha_aqui';
    GRANT ALL PRIVILEGES ON joseda34_site.* TO 'joseda34_dev'@'localhost';
    FLUSH PRIVILEGES;
    ```
