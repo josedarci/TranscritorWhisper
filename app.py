@@ -846,7 +846,7 @@ with gr.Blocks(title="🎙️ Transcritor Inteligente v2.0 Enterprise", theme=gr
 
                     check_salvar_tts = gr.Checkbox(
                         value=True,
-                        label="💾 Salvar Artigo e Áudio no Acervo / Banco de Dados (MySQL & Chat RAG)"
+                        label="💾 Salvar Artigo e Áudio no Acervo / Banco de Dados (MySQL)"
                     )
                     btn_gerar_tts = gr.Button("🚀 Gerar Áudio MP3 do Artigo", variant="primary", size="lg")
 
