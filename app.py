@@ -19,6 +19,7 @@ from services.ai_extractor import gerar_tags_e_categorias, extrair_entidades
 from services.vector_store import vector_store_global
 from services.exporter import exportar_txt, exportar_markdown, exportar_html, exportar_pdf_ata_operacional, formatar_data_br
 from services.tts_generator import gerar_audio_tts, VOIZES_DISPONIVEIS
+from services.audio_equalizer import PRESETS_EQUALIZADOR
 from pipeline.audio_processor import calcular_hash_sha256, aplicar_diarization_simulada
 from pipeline.llm_enricher import enriquecer_transcricao_completa
 
@@ -831,6 +832,18 @@ with gr.Blocks(title="🎙️ Transcritor Inteligente v2.0 Enterprise", theme=gr
                             value="+0%",
                             label="⚡ Velocidade da Fala"
                         )
+                    
+                    with gr.Accordion("🎛️ Equalizador de Áudio (Presets & Ajuste Fino de 3 Bandas)", open=True):
+                        input_eq_preset = gr.Dropdown(
+                            choices=list(PRESETS_EQUALIZADOR.keys()),
+                            value="Nenhum (Áudio Original)",
+                            label="🎚️ Preset de Som / Timbre Vocal"
+                        )
+                        with gr.Row():
+                            slider_eq_low = gr.Slider(minimum=-12, maximum=12, value=0, step=1, label="🎸 Graves (100Hz dB)")
+                            slider_eq_mid = gr.Slider(minimum=-12, maximum=12, value=0, step=1, label="🎙️ Médios (1000Hz dB)")
+                            slider_eq_high = gr.Slider(minimum=-12, maximum=12, value=0, step=1, label="📻 Agudos (6000Hz dB)")
+
                     check_salvar_tts = gr.Checkbox(
                         value=True,
                         label="💾 Salvar Artigo e Áudio no Acervo / Banco de Dados (MySQL & Chat RAG)"
@@ -842,13 +855,25 @@ with gr.Blocks(title="🎙️ Transcritor Inteligente v2.0 Enterprise", theme=gr
                     out_player_tts = gr.Audio(label="🎧 Player para Ouvir o Áudio", type="filepath")
                     out_file_tts = gr.File(label="📥 Download do Arquivo MP3 Gerado")
 
-            def processar_geracao_tts_ui(txt, voz, vel, salvar):
-                filepath, msg = gerar_audio_tts(txt, voz_selecionada=voz, velocidade=vel, salvar_banco=salvar)
+            def processar_geracao_tts_ui(txt, voz, vel, salvar, eq_preset, eq_low, eq_mid, eq_high):
+                filepath, msg = gerar_audio_tts(
+                    txt,
+                    voz_selecionada=voz,
+                    velocidade=vel,
+                    salvar_banco=salvar,
+                    eq_preset=eq_preset,
+                    eq_gain_low=eq_low,
+                    eq_gain_mid=eq_mid,
+                    eq_gain_high=eq_high
+                )
                 return filepath, filepath, msg
 
             btn_gerar_tts.click(
                 fn=processar_geracao_tts_ui,
-                inputs=[input_texto_tts, input_voz_tts, input_velocidade_tts, check_salvar_tts],
+                inputs=[
+                    input_texto_tts, input_voz_tts, input_velocidade_tts,
+                    check_salvar_tts, input_eq_preset, slider_eq_low, slider_eq_mid, slider_eq_high
+                ],
                 outputs=[out_player_tts, out_file_tts, out_status_tts]
             )
 

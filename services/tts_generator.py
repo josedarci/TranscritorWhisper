@@ -82,21 +82,31 @@ def salvar_artigo_no_banco_e_vectorstore(nome_arquivo: str, output_path: str, te
     
     return False
 
+from services.audio_equalizer import aplicar_equalizador, PRESETS_EQUALIZADOR
+
 def gerar_audio_tts(
     texto: str,
     voz_selecionada: str = "en-US-ChristopherNeural",
     velocidade: str = "+0%",
     output_path: str = None,
-    salvar_banco: bool = True
+    salvar_banco: bool = True,
+    eq_preset: str = "Nenhum (Áudio Original)",
+    eq_gain_low: float = 0.0,
+    eq_gain_mid: float = 0.0,
+    eq_gain_high: float = 0.0
 ) -> tuple[str, str]:
     """
-    Gera um arquivo de áudio MP3 a partir do texto fornecido e salva no banco de dados.
+    Gera um arquivo de áudio MP3 a partir do texto fornecido, aplica equalização (se configurado) e salva no banco de dados.
     
     :param texto: Texto a ser convertido em voz.
     :param voz_selecionada: ID da voz ou rótulo exibido no Gradio.
     :param velocidade: Taxa de velocidade (ex: "+0%", "+10%", "-10%").
     :param output_path: Caminho opcional do arquivo de saída.
     :param salvar_banco: Se True, registra o texto e o áudio no MySQL e VectorStore.
+    :param eq_preset: Preset de equalizador a ser aplicado.
+    :param eq_gain_low: Ganho manual de graves em dB (-12 a +12).
+    :param eq_gain_mid: Ganho manual de médios em dB (-12 a +12).
+    :param eq_gain_high: Ganho manual de agudos em dB (-12 a +12).
     :return: Tupla (caminho_do_arquivo_mp3, mensagem_status)
     """
     if not texto or not texto.strip():
@@ -140,6 +150,19 @@ def gerar_audio_tts(
             asyncio.run(_sintetizar_audio_async(texto, voz_id, rate_str, output_path))
 
         if os.path.exists(output_path) and os.path.getsize(output_path) > 0:
+            # Aplicar equalizador se preset for diferente do original ou houver ganho manual
+            eq_aplicado = False
+            if eq_preset != "Nenhum (Áudio Original)" or eq_gain_low != 0.0 or eq_gain_mid != 0.0 or eq_gain_high != 0.0:
+                output_path = aplicar_equalizador(
+                    output_path,
+                    output_path,
+                    preset=eq_preset,
+                    gain_low=eq_gain_low,
+                    gain_mid=eq_gain_mid,
+                    gain_high=eq_gain_high
+                )
+                eq_aplicado = True
+
             tamanho_kb = round(os.path.getsize(output_path) / 1024, 1)
             
             banco_msg = ""
@@ -150,11 +173,14 @@ def gerar_audio_tts(
                 else:
                     banco_msg = "\n• Banco de Dados: ℹ️ Indexado no VectorStore/RAG (Backend MySQL off)."
 
+            eq_status = f"\n• Equalizador: 🎛️ Preset '{eq_preset}' aplicado" if eq_aplicado else "\n• Equalizador: Nenhum (Original)"
+
             msg = (
                 f"✅ Áudio gerado com sucesso!\n"
                 f"• Voz: {voz_id}\n"
                 f"• Tamanho: {tamanho_kb} KB\n"
                 f"• Arquivo: {nome_arquivo}"
+                f"{eq_status}"
                 f"{banco_msg}"
             )
             logging.info(msg)
@@ -166,3 +192,4 @@ def gerar_audio_tts(
         err_msg = f"❌ Erro ao gerar áudio TTS: {str(e)}"
         logging.error(err_msg, exc_info=True)
         return None, err_msg
+
