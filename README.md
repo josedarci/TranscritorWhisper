@@ -185,6 +185,13 @@ Dashboard, Pesquisa, Exportação (TXT, MD, HTML)
 
 ---
 
+### 21. 🔊 edge-tts (Microsoft Edge Neural Text-to-Speech)
+- **O que é**: Biblioteca Python para síntese de voz neural sem necessidade de chaves de API pagas.
+- **No projeto**: Alimentação do módulo de conversão de artigos e textos em áudio MP3 com vozes masculinas e femininas profissionais em inglês e português.
+
+
+---
+
 ## 🏗️ Por que essa arquitetura é moderna e escalável?
 
 Essa arquitetura separa claramente as responsabilidades:
@@ -247,6 +254,24 @@ Essa resposta é 100% baseada no conteúdo real da reunião, sem palpites ou gen
 
 ### 🛡️ Por que utilizar RAG? (Eliminação de Alucinações)
 Sem a arquitetura RAG, o modelo de linguagem pode responder com informações inventadas (*"alucinações"*).
+
+---
+
+## 🔊 RECURSO: GERADOR DE ÁUDIO MP3 PARA ARTIGOS (Text-to-Speech / TTS)
+
+A aba **Gerador de Áudio (TTS)** permite transformar artigos técnicos, resumos ou textos em arquivos de áudio `.mp3` de alta fidelidade para publicar em blogs ou ouvir em trânsito.
+
+### 🎙️ Principais Recursos
+- **Vozes Neurais de Alta Qualidade**: Integração com vozes da Microsoft Edge Neural (`en-US-ChristopherNeural`, `en-US-JennyNeural`, `en-GB-SoniaNeural`, `pt-BR-AntonioNeural`, etc.).
+- **Controle de Velocidade**: Ajuste fino da fala de `-20%` até `+30%`.
+- **Player Integrado & Download Directo**: Reprodução instantânea no navegador e download do arquivo `.mp3`.
+- **Script CLI Incluído**: Utilitário no terminal (`gerar_audio_artigo.py`) para automação via arquivo `.txt` ou texto.
+
+```bash
+# Exemplo de uso via Terminal (CLI):
+python3 gerar_audio_artigo.py --file artigo.txt -v en-US-ChristopherNeural -o artigo_audio.mp3
+```
+
 
 - **Sem RAG**: Pergunta *"Quem ficou responsável pelo projeto?"* → A IA pode inventar um nome qualquer.
 - **Com RAG**: A IA pesquisa o texto real e responde apenas com os nomes expressamente citados na gravação.
@@ -683,6 +708,7 @@ python3 -m unittest discover -s tests
 - [x] 🏷️ **Extração automática de entidades (NER)** (Pessoas, Empresas, Datas, Valores e Emails em JSON)
 - [x] 📊 **Dashboard com métricas executivas** e **exportação em múltiplos formatos** (TXT, Markdown, HTML)
 - [x] 📝 **Geração automática de atas operacionais de reunião em PDF** (Documentos formais estilizados para impressão, visto e assinatura)
+- [x] 🔊 **Gerador de Áudio MP3 (Text-to-Speech / TTS)** para artigos técnicos e blogs com vozes neurais profissionais (Microsoft Edge TTS)
 - [x] 🐳 **Deploy simplificado via Docker & Docker Compose** (MySQL + Node.js + Python App)
 
 ---

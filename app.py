@@ -18,6 +18,7 @@ whisper_lock = threading.Lock()
 from services.ai_extractor import gerar_tags_e_categorias, extrair_entidades
 from services.vector_store import vector_store_global
 from services.exporter import exportar_txt, exportar_markdown, exportar_html, exportar_pdf_ata_operacional, formatar_data_br
+from services.tts_generator import gerar_audio_tts, VOIZES_DISPONIVEIS
 from pipeline.audio_processor import calcular_hash_sha256, aplicar_diarization_simulada
 from pipeline.llm_enricher import enriquecer_transcricao_completa
 
@@ -807,4 +808,51 @@ with gr.Blocks(title="🎙️ Transcritor Inteligente v2.0 Enterprise", theme=gr
             btn_cadastrar_u.click(fn=cadastrar_usuario_ui, inputs=[u_nome, u_email, u_senha, u_cargo], outputs=[out_status_u, grid_usuarios])
             btn_refresh_u.click(fn=listar_usuarios_admin, inputs=[], outputs=[grid_usuarios])
 
-demo.launch(server_name="127.0.0.1", server_port=7860)
+        # ABA 8: Gerador de Áudio MP3 (Text-to-Speech)
+        with gr.TabItem("🔊 Gerador de Áudio (TTS)"):
+            gr.Markdown("### 🔊 Gerador de Áudio MP3 para Artigos Técnicos (Text-to-Speech)")
+            gr.Markdown("Cole o texto do seu artigo técnico em inglês (ou português) para sintetizar uma locução profissional em alta qualidade e baixar o arquivo .mp3.")
+            
+            with gr.Row():
+                with gr.Column(scale=2):
+                    input_texto_tts = gr.Textbox(
+                        label="📄 Texto do Artigo em Inglês ou Português",
+                        placeholder="Paste your technical article text in English here...\n\nExample:\nVector Databases for RAG Architectures: Trade-offs & Security Analysis.\nAs Retrieval-Augmented Generation matures into a fundamental pattern, engineers face critical architecture decisions...",
+                        lines=12
+                    )
+                    with gr.Row():
+                        input_voz_tts = gr.Dropdown(
+                            choices=list(VOIZES_DISPONIVEIS.values()),
+                            value=VOIZES_DISPONIVEIS["en-US-ChristopherNeural"],
+                            label="🎙️ Selecione a Voz Neural Profissional"
+                        )
+                        input_velocidade_tts = gr.Dropdown(
+                            choices=["-20%", "-10%", "+0%", "+10%", "+20%", "+30%"],
+                            value="+0%",
+                            label="⚡ Velocidade da Fala"
+                        )
+                    btn_gerar_tts = gr.Button("🚀 Gerar Áudio MP3 do Artigo", variant="primary", size="lg")
+
+                with gr.Column(scale=1):
+                    out_status_tts = gr.Textbox(label="📊 Status da Geração", lines=5)
+                    out_player_tts = gr.Audio(label="🎧 Player para Ouvir o Áudio", type="filepath")
+                    out_file_tts = gr.File(label="📥 Download do Arquivo MP3 Gerado")
+
+            def processar_geracao_tts_ui(txt, voz, vel):
+                filepath, msg = gerar_audio_tts(txt, voz_selecionada=voz, velocidade=vel)
+                return filepath, filepath, msg
+
+            btn_gerar_tts.click(
+                fn=processar_geracao_tts_ui,
+                inputs=[input_texto_tts, input_voz_tts, input_velocidade_tts],
+                outputs=[out_player_tts, out_file_tts, out_status_tts]
+            )
+
+port = int(os.environ.get("GRADIO_SERVER_PORT", 7860))
+try:
+    demo.launch(server_name="127.0.0.1", server_port=port)
+except OSError:
+    logging.warning(f"Porta {port} ocupada. Tentando porta livre automática...")
+    demo.launch(server_name="127.0.0.1")
+
+
