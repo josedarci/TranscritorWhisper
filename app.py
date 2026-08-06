@@ -831,6 +831,10 @@ with gr.Blocks(title="🎙️ Transcritor Inteligente v2.0 Enterprise", theme=gr
                             value="+0%",
                             label="⚡ Velocidade da Fala"
                         )
+                    check_salvar_tts = gr.Checkbox(
+                        value=True,
+                        label="💾 Salvar Artigo e Áudio no Acervo / Banco de Dados (MySQL & Chat RAG)"
+                    )
                     btn_gerar_tts = gr.Button("🚀 Gerar Áudio MP3 do Artigo", variant="primary", size="lg")
 
                 with gr.Column(scale=1):
@@ -838,13 +842,13 @@ with gr.Blocks(title="🎙️ Transcritor Inteligente v2.0 Enterprise", theme=gr
                     out_player_tts = gr.Audio(label="🎧 Player para Ouvir o Áudio", type="filepath")
                     out_file_tts = gr.File(label="📥 Download do Arquivo MP3 Gerado")
 
-            def processar_geracao_tts_ui(txt, voz, vel):
-                filepath, msg = gerar_audio_tts(txt, voz_selecionada=voz, velocidade=vel)
+            def processar_geracao_tts_ui(txt, voz, vel, salvar):
+                filepath, msg = gerar_audio_tts(txt, voz_selecionada=voz, velocidade=vel, salvar_banco=salvar)
                 return filepath, filepath, msg
 
             btn_gerar_tts.click(
                 fn=processar_geracao_tts_ui,
-                inputs=[input_texto_tts, input_voz_tts, input_velocidade_tts],
+                inputs=[input_texto_tts, input_voz_tts, input_velocidade_tts, check_salvar_tts],
                 outputs=[out_player_tts, out_file_tts, out_status_tts]
             )
 
