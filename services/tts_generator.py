@@ -16,6 +16,9 @@ VOIZES_DISPONIVEIS = {
     "en-GB-RyanNeural": "🇬🇧 Inglês (UK) - Ryan (Masculino Britânico)",
     "pt-BR-AntonioNeural": "🇧🇷 Português (BR) - Antonio (Masculino)",
     "pt-BR-FranciscaNeural": "🇧🇷 Português (BR) - Francisca (Feminino)",
+    "zh-CN-XiaoxiaoNeural": "🇨🇳 Chinês (Mandarim) - Xiaoxiao (Feminino Neural)",
+    "zh-CN-YunxiNeural": "🇨🇳 Chinês (Mandarim) - Yunxi (Masculino Neural)",
+    "zh-CN-YunjianNeural": "🇨🇳 Chinês (Mandarim) - Yunjian (Masculino Narrador)",
 }
 
 # Mapeamento inverso do rótulo da UI para o identificador da voz
@@ -58,7 +61,7 @@ def salvar_artigo_no_banco_e_vectorstore(nome_arquivo: str, output_path: str, te
             "caminho": output_path,
             "tamanho_bytes": tamanho_bytes,
             "duracao_segundos": 0.0,
-            "idioma": "en" if "en-" in voz_id else "pt",
+            "idioma": "zh" if "zh-" in voz_id else ("en" if "en-" in voz_id else "pt"),
             "modelo_whisper": f"Edge-TTS ({voz_id})",
             "modelo_llama": "N/A",
             "tempo_transcricao": 0.0,
